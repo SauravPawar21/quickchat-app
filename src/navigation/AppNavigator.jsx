@@ -1,0 +1,75 @@
+import React, { useEffect, useState } from "react";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { NavigationContainer } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { useSelector } from "react-redux";
+
+import SplashScreen from "../screens/SplashScreen";
+import LoginScreen from "../screens/LoginScreen";
+import SignupScreen from "../screens/SignupScreen";
+import HomeScreen from "../screens/HomeScreen";
+import ChatScreen from "../screens/ChatScreen";
+import UsersScreen from "../screens/UsersScreen";
+import ProfileScreen from "../screens/ProfileScreen";
+
+const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
+
+const MainTabs = () => {
+  return (
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: "#1A73E8",
+        tabBarInactiveTintColor: "#999",
+        tabBarStyle: {
+          backgroundColor: "#fff",
+          borderTopWidth: 1,
+          borderTopColor: "#eee",
+          paddingBottom: 5,
+          height: 60,
+        },
+      }}
+    >
+      <Tab.Screen
+        name="Home"
+        component={HomeScreen}
+        options={{ tabBarLabel: "Chats" }}
+      />
+      <Tab.Screen
+        name="Users"
+        component={UsersScreen}
+        options={{ tabBarLabel: "People" }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{ tabBarLabel: "Profile" }}
+      />
+    </Tab.Navigator>
+  );
+};
+
+const AppNavigator = () => {
+  const { user } = useSelector((state) => state.user);
+
+  return (
+    <NavigationContainer>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="Splash" component={SplashScreen} />
+
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="Signup" component={SignupScreen} />
+
+        <Stack.Screen name="MainTabs" component={MainTabs} />
+        <Stack.Screen
+          name="Chat"
+          component={ChatScreen}
+          options={{ headerShown: true }}
+        />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+};
+
+export default AppNavigator;
