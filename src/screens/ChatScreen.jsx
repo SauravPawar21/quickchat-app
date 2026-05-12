@@ -59,11 +59,19 @@ const ChatScreen = ({ route, navigation }) => {
     try {
       setLoading(true);
       const token = await getToken();
+
       const response = await api.get(`/api/messages/${receiverId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       setMessages(response.data.messages || response.data.message || []);
+
+      await api.patch(
+        `/api/messages/read/${receiverId}`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
     } catch (err) {
       setMessages([]);
       Alert.alert("Error", "Failed to load messages");

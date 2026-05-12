@@ -45,7 +45,7 @@ const UsersScreen = ({ navigation }) => {
           {lastName[0]}
         </Text>
       </View>
-     
+
       <View
         style={[
           styles.onlineDot,
@@ -74,7 +74,14 @@ const UsersScreen = ({ navigation }) => {
           {item.bio || "Hey there! I am using QuickChat"}
         </Text>
       </View>
-      {item.isOnline && <Text style={styles.onlineText}>Online</Text>}
+      <Text
+        style={[
+          styles.statusText,
+          { color: item.isOnline ? "#16A085" : "#999" },
+        ]}
+      >
+        {item.isOnline ? "Online" : "Offline"}
+      </Text>
     </TouchableOpacity>
   );
 
@@ -209,6 +216,10 @@ const styles = StyleSheet.create({
   emptySubtext: {
     fontSize: 14,
     color: "#999",
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: "600",
   },
 });
 

@@ -15,8 +15,6 @@ import api from "../utils/api";
 const HomeScreen = ({ navigation }) => {
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // Refresh conversations every time screen comes into focus
   useFocusEffect(
     useCallback(() => {
       fetchConversations();
@@ -96,9 +94,19 @@ const HomeScreen = ({ navigation }) => {
             {formatTime(item.lastMessageTime)}
           </Text>
         </View>
-        <Text style={styles.lastMessage} numberOfLines={1}>
-          {item.lastMessage}
-        </Text>
+        <View style={styles.lastMessageRow}>
+          <Text
+            style={[styles.lastMessage, !item.isRead && styles.unreadMessage]}
+            numberOfLines={1}
+          >
+            {item.lastMessage}
+          </Text>
+          {!item.isRead && (
+            <View style={styles.unreadBadge}>
+              <Text style={styles.unreadBadgeText}>●</Text>
+            </View>
+          )}
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -113,12 +121,10 @@ const HomeScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>💬 Chats</Text>
       </View>
 
-      {/* Conversations list */}
       {conversations.length === 0 ? (
         <View style={styles.centered}>
           <Text style={styles.emptyText}>No conversations yet</Text>
@@ -251,6 +257,22 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
     fontSize: 15,
+  },
+  lastMessageRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  unreadMessage: {
+    color: "#1A1A2E",
+    fontWeight: "600",
+  },
+  unreadBadge: {
+    marginLeft: 8,
+  },
+  unreadBadgeText: {
+    color: "#1A73E8",
+    fontSize: 16,
   },
 });
 

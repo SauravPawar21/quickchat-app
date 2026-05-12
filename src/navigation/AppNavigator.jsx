@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useSelector } from "react-redux";
+import { Text } from "react-native";
 
 import SplashScreen from "../screens/SplashScreen";
 import LoginScreen from "../screens/LoginScreen";
@@ -34,17 +35,26 @@ const MainTabs = () => {
       <Tab.Screen
         name="Home"
         component={HomeScreen}
-        options={{ tabBarLabel: "Chats" }}
+        options={{
+          tabBarLabel: "Chats",
+          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20 }}>💬</Text>,
+        }}
       />
       <Tab.Screen
         name="Users"
         component={UsersScreen}
-        options={{ tabBarLabel: "People" }}
+        options={{
+          tabBarLabel: "People",
+          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20 }}>👥</Text>,
+        }}
       />
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}
-        options={{ tabBarLabel: "Profile" }}
+        options={{
+          tabBarLabel: "Profile",
+          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20 }}>👤</Text>,
+        }}
       />
     </Tab.Navigator>
   );
