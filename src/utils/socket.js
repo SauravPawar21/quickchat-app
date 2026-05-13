@@ -4,10 +4,10 @@ import { BASE_URL } from "./api";
 let socket = null;
 
 export const initSocket = (userId) => {
-  if (socket && socket.connected) {
-    console.log("Socket already connected!");
-    return socket;
+  if (socket) {
+    socket.disconnect();
   }
+
   socket = io(BASE_URL, {
     transports: ["websocket"],
   });

@@ -11,6 +11,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { clearUser } from "../redux/userSlice";
 import { removeToken, removeUser } from "../utils/storage";
 import { disconnectSocket } from "../utils/socket";
+import api from "../utils/api";
 
 const ProfileScreen = ({ navigation }) => {
   const { user } = useSelector((state) => state.user);
@@ -23,6 +24,7 @@ const ProfileScreen = ({ navigation }) => {
         text: "Logout",
         style: "destructive",
         onPress: async () => {
+          await api.post("/api/auth/logout");
           disconnectSocket();
           await removeToken();
           await removeUser();

@@ -25,9 +25,11 @@ const HomeScreen = ({ navigation }) => {
     try {
       setLoading(true);
       const token = await getToken();
+      console.log("TOKEN:", token);
       const response = await api.get("/api/users/conversations/list", {
         headers: { Authorization: `Bearer ${token}` },
       });
+      console.log("Logged In User:", response.data);
       setConversations(response.data.conversations || []);
     } catch (err) {
       Alert.alert("Error", "Failed to load conversations");

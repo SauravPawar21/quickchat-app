@@ -12,8 +12,8 @@ import {
 } from "react-native";
 import { useDispatch } from "react-redux";
 import { setUser } from "../redux/userSlice";
-import { saveToken, saveUser } from "../utils/storage";
-import { initSocket } from "../utils/socket";
+import { removeToken, removeUser, saveToken, saveUser } from "../utils/storage";
+import { disconnectSocket, initSocket } from "../utils/socket";
 import api from "../utils/api";
 
 const LoginScreen = ({ navigation }) => {
@@ -37,7 +37,9 @@ const LoginScreen = ({ navigation }) => {
       });
 
       const { token, user } = response.data;
-
+      await removeToken();
+      await removeUser();
+      disconnectSocket();
       await saveToken(token);
       await saveUser(user);
 
