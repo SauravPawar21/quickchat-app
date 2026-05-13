@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Alert,
   TextInput,
+  Image,
 } from "react-native";
 import { useSelector } from "react-redux";
 import api from "../utils/api";
@@ -57,19 +58,22 @@ const UsersScreen = ({ navigation }) => {
       console.log("Search error:", error.message);
     }
   };
-  const renderAvatar = (firstName, lastName, isOnline) => (
+  const renderAvatar = (user) => (
     <View style={styles.avatarContainer}>
-      <View style={styles.avatar}>
-        <Text style={styles.avatarText}>
-          {firstName[0]}
-          {lastName[0]}
-        </Text>
-      </View>
-
+      {user?.photoUrl && !user.photoUrl.includes("avatar.iran.liara.run") ? (
+        <Image source={{ uri: user.photoUrl }} style={styles.avatarImage} />
+      ) : (
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>
+            {user?.firstName?.[0]}
+            {user?.lastName?.[0]}
+          </Text>
+        </View>
+      )}
       <View
         style={[
           styles.onlineDot,
-          { backgroundColor: isOnline ? "#16A085" : "#ccc" },
+          { backgroundColor: user?.isOnline ? "#16A085" : "#ccc" },
         ]}
       />
     </View>
@@ -82,10 +86,11 @@ const UsersScreen = ({ navigation }) => {
         navigation.navigate("Chat", {
           receiverId: item._id,
           receiverName: `${item.firstName} ${item.lastName}`,
+          receiverPhoto: item.photoUrl,
         })
       }
     >
-      {renderAvatar(item.firstName, item.lastName, item.isOnline)}
+      {renderAvatar(item)}
       <View style={styles.userInfo}>
         <Text style={styles.userName}>
           {item.firstName} {item.lastName}
@@ -269,12 +274,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
-
   searchInput: {
     flex: 1,
     marginLeft: 8,
     fontSize: 14,
     color: "#1A1A2E",
+  },
+  avatarImage: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
   },
 });
 

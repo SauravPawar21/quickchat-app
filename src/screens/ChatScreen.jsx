@@ -10,6 +10,7 @@ import {
   Platform,
   ActivityIndicator,
   Alert,
+  Image,
 } from "react-native";
 import { useSelector } from "react-redux";
 import { getSocket } from "../utils/socket";
@@ -17,7 +18,7 @@ import { getToken } from "../utils/storage";
 import api from "../utils/api";
 
 const ChatScreen = ({ route, navigation }) => {
-  const { receiverId, receiverName } = route.params;
+  const { receiverId, receiverName, receiverPhoto } = route.params;
   const { user } = useSelector((state) => state.user);
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
@@ -28,7 +29,44 @@ const ChatScreen = ({ route, navigation }) => {
 
   useEffect(() => {
     try {
-      navigation.setOptions({ title: receiverName });
+      navigation.setOptions({
+        headerTitle: () => (
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            {receiverPhoto &&
+            !receiverPhoto.includes("avatar.iran.liara.run") ? (
+              <Image
+                source={{ uri: receiverPhoto }}
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 18,
+                  marginRight: 10,
+                }}
+              />
+            ) : (
+              <View
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 18,
+                  backgroundColor: "#1A73E8",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  marginRight: 10,
+                }}
+              >
+                <Text style={{ color: "#fff", fontWeight: "bold" }}>
+                  {receiverName[0]}
+                </Text>
+              </View>
+            )}
+
+            <Text style={{ fontSize: 16, fontWeight: "600", color: "#1A1A2E" }}>
+              {receiverName}
+            </Text>
+          </View>
+        ),
+      });
       fetchMessages();
 
       const socket = getSocket();

@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  Image,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { getToken } from "../utils/storage";
@@ -40,12 +41,16 @@ const HomeScreen = ({ navigation }) => {
 
   const renderAvatar = (user) => (
     <View style={styles.avatarContainer}>
-      <View style={styles.avatar}>
-        <Text style={styles.avatarText}>
-          {user?.firstName?.[0]}
-          {user?.lastName?.[0]}
-        </Text>
-      </View>
+      {user?.photoUrl && !user.photoUrl.includes("avatar.iran.liara.run") ? (
+        <Image source={{ uri: user.photoUrl }} style={styles.avatarImage} />
+      ) : (
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>
+            {user?.firstName?.[0]}
+            {user?.lastName?.[0]}
+          </Text>
+        </View>
+      )}
       <View
         style={[
           styles.onlineDot,
@@ -83,6 +88,7 @@ const HomeScreen = ({ navigation }) => {
         navigation.navigate("Chat", {
           receiverId: item.user._id,
           receiverName: `${item.user.firstName} ${item.user.lastName}`,
+          receiverPhoto: item.user.photoUrl,
         })
       }
     >
@@ -275,6 +281,11 @@ const styles = StyleSheet.create({
   unreadBadgeText: {
     color: "#1A73E8",
     fontSize: 16,
+  },
+  avatarImage: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
   },
 });
 
