@@ -7,14 +7,18 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  TextInput,
 } from "react-native";
 import { useSelector } from "react-redux";
 import api from "../utils/api";
 import { getToken } from "../utils/storage";
+import { Ionicons } from "@expo/vector-icons";
 
 const UsersScreen = ({ navigation }) => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchedUsers, setSearchedUsers] = useState([]);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     fetchUsers();
@@ -37,6 +41,22 @@ const UsersScreen = ({ navigation }) => {
     }
   };
 
+  const searchUsers = async (text) => {
+    try {
+      setSearch(text);
+      if (!text.trim()) {
+        setSearchedUsers([]);
+        return;
+      }
+      const token = await getToken();
+      const response = await api.get(`/api/users/search?query=${text}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setSearchedUsers(response.data);
+    } catch (error) {
+      console.log("Search error:", error.message);
+    }
+  };
   const renderAvatar = (firstName, lastName, isOnline) => (
     <View style={styles.avatarContainer}>
       <View style={styles.avatar}>
@@ -85,6 +105,8 @@ const UsersScreen = ({ navigation }) => {
     </TouchableOpacity>
   );
 
+  const displayedUsers = search ? searchedUsers : users;
+
   if (loading) {
     return (
       <View style={styles.centered}>
@@ -95,16 +117,31 @@ const UsersScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>People</Text>
         <Text style={styles.headerSubtitle}>
-          {users.length} users available
+          {displayedUsers.length} users available
         </Text>
+        <View style={styles.searchContainer}>
+          <Ionicons name="search-outline" size={20} color="#999" />
+
+          <TextInput
+            placeholder="Search users..."
+            placeholderTextColor="#999"
+            value={search}
+            onChangeText={searchUsers}
+            style={styles.searchInput}
+          />
+
+          {search.length > 0 && (
+            <TouchableOpacity onPress={() => searchUsers("")}>
+              <Ionicons name="close-circle" size={20} color="#999" />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
-      {/* Users list */}
-      {users.length === 0 ? (
+      {displayedUsers.length === 0 ? (
         <View style={styles.centered}>
           <Text style={styles.emptyText}>No users found</Text>
           <Text style={styles.emptySubtext}>
@@ -113,7 +150,7 @@ const UsersScreen = ({ navigation }) => {
         </View>
       ) : (
         <FlatList
-          data={users}
+          data={displayedUsers}
           keyExtractor={(item) => item._id}
           renderItem={renderUser}
           showsVerticalScrollIndicator={false}
@@ -220,6 +257,24 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 12,
     fontWeight: "600",
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 14,
+    backgroundColor: "#F7F9FC",
+    borderWidth: 1,
+    borderColor: "#E8ECF4",
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+
+  searchInput: {
+    flex: 1,
+    marginLeft: 8,
+    fontSize: 14,
+    color: "#1A1A2E",
   },
 });
 
