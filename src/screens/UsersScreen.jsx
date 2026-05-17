@@ -7,20 +7,18 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
-  TextInput,
   Image,
+  TextInput,
 } from "react-native";
-import { useSelector } from "react-redux";
-import api from "../utils/api";
-import { getToken } from "../utils/storage";
-import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../context/ThemeContext";
+import { getToken } from "../utils/storage";
+import api from "../utils/api";
 
 const UsersScreen = ({ navigation }) => {
   const [users, setUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchedUsers, setSearchedUsers] = useState([]);
-  const [search, setSearch] = useState("");
+  const [searchText, setSearchText] = useState("");
   const { theme } = useTheme();
 
   useEffect(() => {
@@ -31,12 +29,11 @@ const UsersScreen = ({ navigation }) => {
     try {
       setLoading(true);
       const token = await getToken();
-
       const response = await api.get("/api/users", {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       setUsers(response.data.users);
+      setFilteredUsers(response.data.users);
     } catch (err) {
       Alert.alert("Error", "Failed to load users");
     } finally {
@@ -44,22 +41,21 @@ const UsersScreen = ({ navigation }) => {
     }
   };
 
-  const searchUsers = async (text) => {
-    try {
-      setSearch(text);
-      if (!text.trim()) {
-        setSearchedUsers([]);
-        return;
-      }
-      const token = await getToken();
-      const response = await api.get(`/api/users/search?query=${text}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setSearchedUsers(response.data);
-    } catch (error) {
-      console.log("Search error:", error.message);
+  const handleSearch = (text) => {
+    setSearchText(text);
+    if (text.trim() === "") {
+      setFilteredUsers(users);
+      return;
     }
+    const filtered = users.filter((user) => {
+      const fullName = `${user.firstName} ${user.lastName}`.toLowerCase();
+      const bio = user.bio?.toLowerCase() || "";
+      const query = text.toLowerCase();
+      return fullName.includes(query) || bio.includes(query);
+    });
+    setFilteredUsers(filtered);
   };
+
   const renderAvatar = (user) => (
     <View style={styles.avatarContainer}>
       {user?.photoUrl && !user.photoUrl.includes("avatar.iran.liara.run") ? (
@@ -112,11 +108,9 @@ const UsersScreen = ({ navigation }) => {
     </TouchableOpacity>
   );
 
-  const displayedUsers = search ? searchedUsers : users;
-
   if (loading) {
     return (
-      <View style={styles.centered}>
+      <View style={[styles.centered, { backgroundColor: theme.surface }]}>
         <ActivityIndicator size="large" color="#1A73E8" />
       </View>
     );
@@ -124,6 +118,7 @@ const UsersScreen = ({ navigation }) => {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.surface }]}>
+      {/* Header */}
       <View
         style={[
           styles.header,
@@ -132,22 +127,62 @@ const UsersScreen = ({ navigation }) => {
       >
         <Text style={[styles.headerTitle, { color: theme.text }]}>People</Text>
         <Text style={[styles.headerSubtitle, { color: theme.textSecondary }]}>
-          {users.length} users available
+          {filteredUsers.length} users available
         </Text>
       </View>
 
-      {users.length === 0 ? (
+      {/* Search bar */}
+      <View
+        style={[
+          styles.searchContainer,
+          { backgroundColor: theme.headerBg, borderBottomColor: theme.border },
+        ]}
+      >
+        <TextInput
+          style={[
+            styles.searchInput,
+            {
+              backgroundColor: theme.inputBg,
+              borderColor: theme.inputBorder,
+              color: theme.text,
+            },
+          ]}
+          placeholder="Search by name or bio..."
+          placeholderTextColor={theme.placeholder}
+          value={searchText}
+          onChangeText={handleSearch}
+        />
+        {searchText.length > 0 && (
+          <TouchableOpacity
+            style={styles.clearButton}
+            onPress={() => handleSearch("")}
+          >
+            <Text
+              style={[styles.clearButtonText, { color: theme.textSecondary }]}
+            >
+              ✕
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Users list */}
+      {filteredUsers.length === 0 ? (
         <View style={styles.centered}>
           <Text style={[styles.emptyText, { color: theme.text }]}>
-            No users found
+            {searchText
+              ? `No users found for "${searchText}"`
+              : "No users found"}
           </Text>
           <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
-            Be the first to invite friends!
+            {searchText
+              ? "Try a different search"
+              : "Be the first to invite friends!"}
           </Text>
         </View>
       ) : (
         <FlatList
-          data={users}
+          data={filteredUsers}
           keyExtractor={(item) => item._id}
           renderItem={renderUser}
           showsVerticalScrollIndicator={false}
@@ -161,7 +196,6 @@ const UsersScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
   },
   centered: {
     flex: 1,
@@ -173,17 +207,37 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
   },
   headerTitle: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#1A1A2E",
   },
   headerSubtitle: {
     fontSize: 14,
-    color: "#999",
     marginTop: 4,
+  },
+  searchContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  searchInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    fontSize: 15,
+  },
+  clearButton: {
+    position: "absolute",
+    right: 28,
+    padding: 8,
+  },
+  clearButtonText: {
+    fontSize: 16,
   },
   listContainer: {
     paddingHorizontal: 16,
@@ -194,7 +248,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#f5f5f5",
   },
   avatarContainer: {
     position: "relative",
@@ -207,6 +260,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#1A73E8",
     justifyContent: "center",
     alignItems: "center",
+  },
+  avatarImage: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
   },
   avatarText: {
     color: "#fff",
@@ -229,53 +287,25 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#1A1A2E",
     marginBottom: 4,
   },
   userBio: {
     fontSize: 13,
-    color: "#999",
-  },
-  onlineText: {
-    fontSize: 12,
-    color: "#16A085",
-    fontWeight: "600",
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 8,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: "#999",
   },
   statusText: {
     fontSize: 12,
     fontWeight: "600",
   },
-  searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 14,
-    backgroundColor: "#F7F9FC",
-    borderWidth: 1,
-    borderColor: "#E8ECF4",
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+  emptyText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 8,
+    textAlign: "center",
   },
-  searchInput: {
-    flex: 1,
-    marginLeft: 8,
+  emptySubtext: {
     fontSize: 14,
-    color: "#1A1A2E",
-  },
-  avatarImage: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    textAlign: "center",
+    paddingHorizontal: 40,
   },
 });
 
