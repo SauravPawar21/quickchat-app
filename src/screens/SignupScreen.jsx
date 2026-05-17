@@ -12,6 +12,7 @@ import {
   ScrollView,
 } from "react-native";
 import api from "../utils/api";
+import { useTheme } from "../context/ThemeContext";
 
 const SignupScreen = ({ navigation }) => {
   const [firstName, setFirstName] = useState("");
@@ -19,6 +20,7 @@ const SignupScreen = ({ navigation }) => {
   const [emailId, setEmailId] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const { theme } = useTheme();
 
   const handleSignup = async () => {
     if (!firstName || !lastName || !emailId || !password) {
@@ -60,54 +62,79 @@ const SignupScreen = ({ navigation }) => {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.background }]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView contentContainerStyle={styles.innerContainer}>
-        {/* Header */}
         <Text style={styles.title}>💬 QuickChat</Text>
-        <Text style={styles.subtitle}>Create your account</Text>
+        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+          Create your account
+        </Text>
 
-        {/* First Name */}
         <TextInput
-          style={styles.input}
+          style={[
+            styles.input,
+            {
+              backgroundColor: theme.inputBg,
+              borderColor: theme.inputBorder,
+              color: theme.text,
+            },
+          ]}
           placeholder="First name"
-          placeholderTextColor="#999"
+          placeholderTextColor={theme.placeholder}
           value={firstName}
           onChangeText={setFirstName}
         />
 
-        {/* Last Name */}
         <TextInput
           style={styles.input}
+          style={[
+            styles.input,
+            {
+              backgroundColor: theme.inputBg,
+              borderColor: theme.inputBorder,
+              color: theme.text,
+            },
+          ]}
           placeholder="Last name"
-          placeholderTextColor="#999"
+          placeholderTextColor={theme.placeholder}
           value={lastName}
           onChangeText={setLastName}
         />
 
-        {/* Email */}
         <TextInput
-          style={styles.input}
+          style={[
+            styles.input,
+            {
+              backgroundColor: theme.inputBg,
+              borderColor: theme.inputBorder,
+              color: theme.text,
+            },
+          ]}
           placeholder="Email address"
-          placeholderTextColor="#999"
+          placeholderTextColor={theme.placeholder}
           value={emailId}
           onChangeText={setEmailId}
           keyboardType="email-address"
           autoCapitalize="none"
         />
 
-        {/* Password */}
         <TextInput
-          style={styles.input}
+          style={[
+            styles.input,
+            {
+              backgroundColor: theme.inputBg,
+              borderColor: theme.inputBorder,
+              color: theme.text,
+            },
+          ]}
           placeholder="Password (min 6 characters)"
-          placeholderTextColor="#999"
+          placeholderTextColor={theme.placeholder}
           value={password}
           onChangeText={setPassword}
           secureTextEntry
         />
 
-        {/* Signup Button */}
         <TouchableOpacity
           style={styles.button}
           onPress={handleSignup}
@@ -120,11 +147,10 @@ const SignupScreen = ({ navigation }) => {
           )}
         </TouchableOpacity>
 
-        {/* Go to Login */}
         <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-          <Text style={styles.linkText}>
+          <Text style={[styles.linkText, { color: theme.textSecondary }]}>
             Already have an account? <Text style={styles.link}>Login</Text>
-          </Text>
+          </Text> 
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>

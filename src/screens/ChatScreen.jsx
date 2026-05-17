@@ -16,6 +16,7 @@ import { useSelector } from "react-redux";
 import { getSocket } from "../utils/socket";
 import { getToken } from "../utils/storage";
 import api from "../utils/api";
+import { useTheme } from "../context/ThemeContext";
 
 const ChatScreen = ({ route, navigation }) => {
   const { receiverId, receiverName, receiverPhoto } = route.params;
@@ -27,21 +28,18 @@ const ChatScreen = ({ route, navigation }) => {
   const flatListRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
+  const { theme } = useTheme();
+
   useEffect(() => {
     try {
       navigation.setOptions({
         headerTitle: () => (
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
             {receiverPhoto &&
             !receiverPhoto.includes("avatar.iran.liara.run") ? (
               <Image
                 source={{ uri: receiverPhoto }}
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 18,
-                  marginRight: 10,
-                }}
+                style={{ width: 36, height: 36, borderRadius: 18 }}
               />
             ) : (
               <View
@@ -52,7 +50,6 @@ const ChatScreen = ({ route, navigation }) => {
                   backgroundColor: "#1A73E8",
                   justifyContent: "center",
                   alignItems: "center",
-                  marginRight: 10,
                 }}
               >
                 <Text style={{ color: "#fff", fontWeight: "bold" }}>
@@ -60,12 +57,15 @@ const ChatScreen = ({ route, navigation }) => {
                 </Text>
               </View>
             )}
-
-            <Text style={{ fontSize: 16, fontWeight: "600", color: "#1A1A2E" }}>
+            <Text
+              style={{ fontSize: 16, fontWeight: "bold", color: theme.text }}
+            >
               {receiverName}
             </Text>
           </View>
         ),
+        headerStyle: { backgroundColor: theme.headerBg },
+        headerTintColor: theme.text,
       });
       fetchMessages();
 
@@ -231,13 +231,23 @@ const ChatScreen = ({ route, navigation }) => {
           <View
             style={[
               styles.messageBubble,
-              isMine ? styles.myMessage : styles.theirMessage,
+              isMine
+                ? styles.myMessage
+                : [
+                    styles.theirMessage,
+                    { backgroundColor: theme.messageBubbleOther },
+                  ],
             ]}
           >
             <Text
               style={[
                 styles.messageText,
-                isMine ? styles.myMessageText : styles.theirMessageText,
+                isMine
+                  ? styles.myMessageText
+                  : [
+                      styles.theirMessageText,
+                      { color: theme.messageTextOther },
+                    ],
               ]}
             >
               {item.text}
@@ -252,7 +262,9 @@ const ChatScreen = ({ route, navigation }) => {
             <Text
               style={[
                 styles.messageTime,
-                isMine ? styles.myMessageTime : styles.theirMessageTime,
+                isMine
+                  ? styles.myMessageTime
+                  : [styles.theirMessageTime, { color: theme.textSecondary }],
               ]}
             >
               {messageTime}
@@ -277,11 +289,10 @@ const ChatScreen = ({ route, navigation }) => {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.chatBg }]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={90}
     >
-      {/* Messages list */}
       <FlatList
         ref={flatListRef}
         data={messages}
@@ -294,26 +305,40 @@ const ChatScreen = ({ route, navigation }) => {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.emptyChat}>
-            <Text style={styles.emptyChatText}>
+            <Text
+              style={[styles.emptyChatText, { color: theme.textSecondary }]}
+            >
               No messages yet. Say hello! 👋
             </Text>
           </View>
         }
       />
 
-      {/* Typing indicator */}
       {isTyping && (
-        <View style={styles.typingContainer}>
-          <Text style={styles.typingText}>{receiverName} is typing...</Text>
+        <View style={[styles.typingContainer, { backgroundColor: theme.card }]}>
+          <Text style={[styles.typingText, { color: theme.textSecondary }]}>
+            {receiverName} is typing...
+          </Text>
         </View>
       )}
 
-      {/* Input bar */}
-      <View style={styles.inputContainer}>
+      <View
+        style={[
+          styles.inputContainer,
+          { backgroundColor: theme.card, borderTopColor: theme.border },
+        ]}
+      >
         <TextInput
-          style={styles.input}
+          style={[
+            styles.input,
+            {
+              backgroundColor: theme.inputBg,
+              borderColor: theme.inputBorder,
+              color: theme.text,
+            },
+          ]}
           placeholder="Type a message..."
-          placeholderTextColor="#999"
+          placeholderTextColor={theme.placeholder}
           value={text}
           onChangeText={handleTextChange}
           multiline

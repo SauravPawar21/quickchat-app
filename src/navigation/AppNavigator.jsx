@@ -4,6 +4,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useSelector } from "react-redux";
 import { Text } from "react-native";
+import { useTheme } from "../context/ThemeContext";
 
 import SplashScreen from "../screens/SplashScreen";
 import LoginScreen from "../screens/LoginScreen";
@@ -18,16 +19,17 @@ const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 const MainTabs = () => {
+  const { theme } = useTheme();
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: "#1A73E8",
-        tabBarInactiveTintColor: "#999",
+        tabBarActiveTintColor: theme.primary,
+        tabBarInactiveTintColor: theme.textSecondary,
         tabBarStyle: {
-          backgroundColor: "#fff",
+          backgroundColor: theme.tabBar,
           borderTopWidth: 1,
-          borderTopColor: "#eee",
+          borderTopColor: theme.tabBarBorder,
           paddingBottom: 5,
           height: 60,
         },

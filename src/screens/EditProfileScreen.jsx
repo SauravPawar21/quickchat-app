@@ -15,11 +15,12 @@ import { useSelector, useDispatch } from "react-redux";
 import { setUser } from "../redux/userSlice";
 import { getToken, saveUser } from "../utils/storage";
 import api from "../utils/api";
+import { useTheme } from "../context/ThemeContext";
 
 const EditProfileScreen = ({ navigation }) => {
   const { user, token } = useSelector((state) => state.user);
   const dispatch = useDispatch();
-
+  const { theme } = useTheme();
   const [firstName, setFirstName] = useState(user?.firstName || "");
   const [lastName, setLastName] = useState(user?.lastName || "");
   const [bio, setBio] = useState(user?.bio || "");
@@ -71,15 +72,27 @@ const EditProfileScreen = ({ navigation }) => {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.surface }]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView contentContainerStyle={styles.innerContainer}>
-        <View style={styles.header}>
+        <View
+          style={[
+            styles.header,
+            {
+              backgroundColor: theme.headerBg,
+              borderBottomColor: theme.border,
+            },
+          ]}
+        >
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.cancelButton}>Cancel</Text>
+            <Text style={[styles.cancelButton, { color: theme.textSecondary }]}>
+              Cancel
+            </Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Edit Profile</Text>
+          <Text style={[styles.headerTitle, { color: theme.text }]}>
+            Edit Profile
+          </Text>
           <TouchableOpacity onPress={handleSave} disabled={loading}>
             {loading ? (
               <ActivityIndicator size="small" color="#1A73E8" />
@@ -89,47 +102,71 @@ const EditProfileScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.form}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>First Name</Text>
+        <View style={[styles.form, { backgroundColor: theme.card }]}>
+          <View
+            style={[styles.inputGroup, { borderBottomColor: theme.border }]}
+          >
+            <Text style={[styles.label, { color: theme.textSecondary }]}>
+              First Name
+            </Text>
             <TextInput
-              style={styles.input}
+              style={[
+                styles.input,
+                { color: theme.text, borderBottomColor: theme.primary },
+              ]}
               value={firstName}
               onChangeText={setFirstName}
               placeholder="Enter first name"
-              placeholderTextColor="#999"
+              placeholderTextColor={theme.placeholder}
               maxLength={50}
             />
           </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Last Name</Text>
+          <View
+            style={[styles.inputGroup, { borderBottomColor: theme.border }]}
+          >
+            <Text style={[styles.label, { color: theme.textSecondary }]}>
+              Last Name
+            </Text>
             <TextInput
-              style={styles.input}
+              style={[
+                styles.input,
+                { color: theme.text, borderBottomColor: theme.primary },
+              ]}
               value={lastName}
               onChangeText={setLastName}
               placeholder="Enter last name"
-              placeholderTextColor="#999"
+              placeholderTextColor={theme.placeholder}
               maxLength={50}
             />
           </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Bio</Text>
+          <View
+            style={[styles.inputGroup, { borderBottomColor: theme.border }]}
+          >
+            <Text style={[styles.label, { color: theme.textSecondary }]}>
+              Bio
+            </Text>
             <TextInput
-              style={[styles.input, styles.bioInput]}
+              style={[
+                styles.input,
+                styles.bioInput,
+                { color: theme.text, borderBottomColor: theme.primary },
+              ]}
               value={bio}
               onChangeText={setBio}
               placeholder="Write something about yourself..."
-              placeholderTextColor="#999"
+              placeholderTextColor={theme.placeholder}
               multiline
               maxLength={200}
             />
-            <Text style={styles.charCount}>{bio.length}/200</Text>
+            <Text style={[styles.charCount, { color: theme.textSecondary }]}>
+              {bio.length}/200
+            </Text>
           </View>
         </View>
 
-        <Text style={styles.infoText}>
+        <Text style={[styles.infoText, { color: theme.textSecondary }]}>
           Your name and bio are visible to other users
         </Text>
       </ScrollView>

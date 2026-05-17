@@ -12,10 +12,13 @@ import {
 import { useFocusEffect } from "@react-navigation/native";
 import { getToken } from "../utils/storage";
 import api from "../utils/api";
+import { useTheme } from "../context/ThemeContext";
 
 const HomeScreen = ({ navigation }) => {
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { theme } = useTheme();
+
   useFocusEffect(
     useCallback(() => {
       fetchConversations();
@@ -83,7 +86,7 @@ const HomeScreen = ({ navigation }) => {
 
   const renderConversation = ({ item }) => (
     <TouchableOpacity
-      style={styles.conversationItem}
+      style={[styles.conversationItem, { borderBottomColor: theme.border }]}
       onPress={() =>
         navigation.navigate("Chat", {
           receiverId: item.user._id,
@@ -95,16 +98,22 @@ const HomeScreen = ({ navigation }) => {
       {renderAvatar(item.user)}
       <View style={styles.conversationInfo}>
         <View style={styles.conversationHeader}>
-          <Text style={styles.conversationName}>
+          <Text style={[styles.conversationName, { color: theme.text }]}>
             {item.user.firstName} {item.user.lastName}
           </Text>
-          <Text style={styles.conversationTime}>
+          <Text
+            style={[styles.conversationTime, { color: theme.textSecondary }]}
+          >
             {formatTime(item.lastMessageTime)}
           </Text>
         </View>
         <View style={styles.lastMessageRow}>
           <Text
-            style={[styles.lastMessage, !item.isRead && styles.unreadMessage]}
+            style={[
+              styles.lastMessage,
+              { color: theme.textSecondary },
+              !item.isRead && { color: theme.text, fontWeight: "600" },
+            ]}
             numberOfLines={1}
           >
             {item.lastMessage}
@@ -128,15 +137,24 @@ const HomeScreen = ({ navigation }) => {
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>💬 Chats</Text>
+    <View style={[styles.container, { backgroundColor: theme.surface }]}>
+      <View
+        style={[
+          styles.header,
+          { backgroundColor: theme.headerBg, borderBottomColor: theme.border },
+        ]}
+      >
+        <Text style={[styles.headerTitle, { color: theme.text }]}>
+          💬 Chats
+        </Text>
       </View>
 
       {conversations.length === 0 ? (
         <View style={styles.centered}>
-          <Text style={styles.emptyText}>No conversations yet</Text>
-          <Text style={styles.emptySubtext}>
+          <Text style={[styles.emptyText, { color: theme.text }]}>
+            No conversations yet
+          </Text>
+          <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
             Go to People tab to find someone to chat with!
           </Text>
           <TouchableOpacity

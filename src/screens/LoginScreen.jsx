@@ -15,12 +15,14 @@ import { setUser } from "../redux/userSlice";
 import { removeToken, removeUser, saveToken, saveUser } from "../utils/storage";
 import { disconnectSocket, initSocket } from "../utils/socket";
 import api from "../utils/api";
+import { useTheme } from "../context/ThemeContext";
 
 const LoginScreen = ({ navigation }) => {
   const [emailId, setEmailId] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const dispatch = useDispatch();
+  const { theme } = useTheme();
 
   const handleLogin = async () => {
     if (!emailId || !password) {
@@ -60,17 +62,26 @@ const LoginScreen = ({ navigation }) => {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.background }]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <View style={styles.innerContainer}>
         <Text style={styles.title}>💬 QuickChat</Text>
-        <Text style={styles.subtitle}>Welcome back!</Text>
+        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+          Welcome back!
+        </Text>
 
         <TextInput
-          style={styles.input}
+          style={[
+            styles.input,
+            {
+              backgroundColor: theme.inputBg,
+              borderColor: theme.inputBorder,
+              color: theme.text,
+            },
+          ]}
           placeholder="Email address"
-          placeholderTextColor="#999"
+          placeholderTextColor={theme.placeholder}
           value={emailId}
           onChangeText={setEmailId}
           keyboardType="email-address"
@@ -78,9 +89,16 @@ const LoginScreen = ({ navigation }) => {
         />
 
         <TextInput
-          style={styles.input}
+          style={[
+            styles.input,
+            {
+              backgroundColor: theme.inputBg,
+              borderColor: theme.inputBorder,
+              color: theme.text,
+            },
+          ]}
           placeholder="Password"
-          placeholderTextColor="#999"
+          placeholderTextColor={theme.placeholder}
           value={password}
           onChangeText={setPassword}
           secureTextEntry
@@ -99,7 +117,7 @@ const LoginScreen = ({ navigation }) => {
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => navigation.navigate("Signup")}>
-          <Text style={styles.linkText}>
+          <Text style={[styles.linkText, { color: theme.textSecondary }]}>
             Don't have an account? <Text style={styles.link}>Sign up</Text>
           </Text>
         </TouchableOpacity>

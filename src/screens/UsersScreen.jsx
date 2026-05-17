@@ -14,12 +14,14 @@ import { useSelector } from "react-redux";
 import api from "../utils/api";
 import { getToken } from "../utils/storage";
 import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "../context/ThemeContext";
 
 const UsersScreen = ({ navigation }) => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchedUsers, setSearchedUsers] = useState([]);
   const [search, setSearch] = useState("");
+  const { theme } = useTheme();
 
   useEffect(() => {
     fetchUsers();
@@ -81,7 +83,7 @@ const UsersScreen = ({ navigation }) => {
 
   const renderUser = ({ item }) => (
     <TouchableOpacity
-      style={styles.userItem}
+      style={[styles.userItem, { borderBottomColor: theme.border }]}
       onPress={() =>
         navigation.navigate("Chat", {
           receiverId: item._id,
@@ -92,17 +94,17 @@ const UsersScreen = ({ navigation }) => {
     >
       {renderAvatar(item)}
       <View style={styles.userInfo}>
-        <Text style={styles.userName}>
+        <Text style={[styles.userName, { color: theme.text }]}>
           {item.firstName} {item.lastName}
         </Text>
-        <Text style={styles.userBio}>
+        <Text style={[styles.userBio, { color: theme.textSecondary }]}>
           {item.bio || "Hey there! I am using QuickChat"}
         </Text>
       </View>
       <Text
         style={[
           styles.statusText,
-          { color: item.isOnline ? "#16A085" : "#999" },
+          { color: item.isOnline ? "#16A085" : theme.textSecondary },
         ]}
       >
         {item.isOnline ? "Online" : "Offline"}
@@ -121,41 +123,31 @@ const UsersScreen = ({ navigation }) => {
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>People</Text>
-        <Text style={styles.headerSubtitle}>
-          {displayedUsers.length} users available
+    <View style={[styles.container, { backgroundColor: theme.surface }]}>
+      <View
+        style={[
+          styles.header,
+          { backgroundColor: theme.headerBg, borderBottomColor: theme.border },
+        ]}
+      >
+        <Text style={[styles.headerTitle, { color: theme.text }]}>People</Text>
+        <Text style={[styles.headerSubtitle, { color: theme.textSecondary }]}>
+          {users.length} users available
         </Text>
-        <View style={styles.searchContainer}>
-          <Ionicons name="search-outline" size={20} color="#999" />
-
-          <TextInput
-            placeholder="Search users..."
-            placeholderTextColor="#999"
-            value={search}
-            onChangeText={searchUsers}
-            style={styles.searchInput}
-          />
-
-          {search.length > 0 && (
-            <TouchableOpacity onPress={() => searchUsers("")}>
-              <Ionicons name="close-circle" size={20} color="#999" />
-            </TouchableOpacity>
-          )}
-        </View>
       </View>
 
-      {displayedUsers.length === 0 ? (
+      {users.length === 0 ? (
         <View style={styles.centered}>
-          <Text style={styles.emptyText}>No users found</Text>
-          <Text style={styles.emptySubtext}>
+          <Text style={[styles.emptyText, { color: theme.text }]}>
+            No users found
+          </Text>
+          <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
             Be the first to invite friends!
           </Text>
         </View>
       ) : (
         <FlatList
-          data={displayedUsers}
+          data={users}
           keyExtractor={(item) => item._id}
           renderItem={renderUser}
           showsVerticalScrollIndicator={false}

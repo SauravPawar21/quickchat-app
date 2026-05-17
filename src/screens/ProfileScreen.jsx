@@ -8,6 +8,7 @@ import {
   ScrollView,
   Image,
   ActivityIndicator,
+  Switch,
 } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
 import * as ImagePicker from "expo-image-picker";
@@ -15,10 +16,12 @@ import { clearUser, setUser } from "../redux/userSlice";
 import { removeToken, removeUser, getToken, saveUser } from "../utils/storage";
 import { disconnectSocket } from "../utils/socket";
 import api from "../utils/api";
+import { useTheme } from "../context/ThemeContext";
 
 const ProfileScreen = ({ navigation }) => {
   const { user } = useSelector((state) => state.user);
   const dispatch = useDispatch();
+  const { theme, isDark, toggleTheme } = useTheme();
   const [uploading, setUploading] = useState(false);
 
   const handleLogout = () => {
@@ -33,7 +36,6 @@ const ProfileScreen = ({ navigation }) => {
           await removeToken();
           await removeUser();
           dispatch(clearUser());
-
           navigation.replace("Login");
         },
       },
@@ -129,51 +131,102 @@ const ProfileScreen = ({ navigation }) => {
   );
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Profile</Text>
+    <ScrollView style={[styles.container, { backgroundColor: theme.surface }]}>
+      <View
+        style={[
+          styles.header,
+          { backgroundColor: theme.headerBg, borderBottomColor: theme.border },
+        ]}
+      >
+        <Text style={[styles.headerTitle, { color: theme.text }]}>Profile</Text>
         <TouchableOpacity onPress={() => navigation.navigate("EditProfile")}>
           <Text style={styles.editButton}>Edit</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.profileSection}>
+      <View style={[styles.profileSection, { backgroundColor: theme.card }]}>
         {renderAvatar()}
         <Text style={styles.tapText}>
           {uploading ? "Uploading..." : "Tap to change photo"}
         </Text>
-        <Text style={styles.name}>
+        <Text style={[styles.name, { color: theme.text }]}>
           {user?.firstName} {user?.lastName}
         </Text>
-        <Text style={styles.email}>{user?.emailId}</Text>
+        <Text style={[styles.email, { color: theme.textSecondary }]}>
+          {user?.emailId}
+        </Text>
       </View>
 
-      <View style={styles.infoSection}>
-        <View style={styles.infoCard}>
-          <Text style={styles.infoLabel}>First Name</Text>
-          <Text style={styles.infoValue}>{user?.firstName}</Text>
+      <View style={[styles.infoSection, { backgroundColor: theme.card }]}>
+        <View style={[styles.infoCard, { borderBottomColor: theme.border }]}>
+          <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>
+            First Name
+          </Text>
+          <Text style={[styles.infoValue, { color: theme.text }]}>
+            {user?.firstName}
+          </Text>
         </View>
 
-        <View style={styles.infoCard}>
-          <Text style={styles.infoLabel}>Last Name</Text>
-          <Text style={styles.infoValue}>{user?.lastName}</Text>
+        <View style={[styles.infoCard, { borderBottomColor: theme.border }]}>
+          <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>
+            Last Name
+          </Text>
+          <Text style={[styles.infoValue, { color: theme.text }]}>
+            {user?.lastName}
+          </Text>
         </View>
 
-        <View style={styles.infoCard}>
-          <Text style={styles.infoLabel}>Email</Text>
-          <Text style={styles.infoValue}>{user?.emailId}</Text>
+        <View style={[styles.infoCard, { borderBottomColor: theme.border }]}>
+          <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>
+            Email
+          </Text>
+          <Text style={[styles.infoValue, { color: theme.text }]}>
+            {user?.emailId}
+          </Text>
         </View>
 
-        <View style={styles.infoCard}>
-          <Text style={styles.infoLabel}>Bio</Text>
-          <Text style={styles.infoValue}>{user?.bio || "No bio yet"}</Text>
+        <View style={[styles.infoCard, { borderBottomColor: theme.border }]}>
+          <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>
+            Bio
+          </Text>
+          <Text style={[styles.infoValue, { color: theme.text }]}>
+            {user?.bio || "No bio yet"}
+          </Text>
+        </View>
+      </View>
+
+      <View
+        style={[
+          styles.infoSection,
+          { backgroundColor: theme.card, marginTop: 16 },
+        ]}
+      >
+        <View style={[styles.settingRow, { borderBottomColor: theme.border }]}>
+          <View>
+            <Text style={[styles.settingLabel, { color: theme.text }]}>
+              Dark Mode
+            </Text>
+            <Text
+              style={[styles.settingSubLabel, { color: theme.textSecondary }]}
+            >
+              Switch to {isDark ? "light" : "dark"} theme
+            </Text>
+          </View>
+          <Switch
+            value={isDark}
+            onValueChange={toggleTheme}
+            trackColor={{ false: "#ddd", true: "#1A73E8" }}
+            thumbColor={isDark ? "#fff" : "#fff"}
+          />
         </View>
       </View>
 
       <View style={styles.appInfo}>
         <Text style={styles.appInfoText}>💬 QuickChat</Text>
-        <Text style={styles.appInfoVersion}>Version 1.0.0</Text>
-        <Text style={styles.appInfoSubtext}>
+        <Text style={[styles.appInfoVersion, { color: theme.textSecondary }]}>
+          Version 1.0.0
+        </Text>
+        <Text style={[styles.appInfoSubtext, { color: theme.textSecondary }]}>
           Built with React Native + Node.js + Socket.io
         </Text>
       </View>
@@ -188,7 +241,6 @@ const ProfileScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
   },
   header: {
     flexDirection: "row",
@@ -197,18 +249,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 16,
-    backgroundColor: "#fff",
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
   },
   headerTitle: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#1A1A2E",
+  },
+  editButton: {
+    fontSize: 16,
+    color: "#1A73E8",
+    fontWeight: "bold",
   },
   profileSection: {
     alignItems: "center",
-    backgroundColor: "#fff",
     paddingVertical: 32,
     marginBottom: 16,
   },
@@ -258,33 +311,41 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#1A1A2E",
     marginBottom: 4,
   },
   email: {
     fontSize: 14,
-    color: "#999",
   },
   infoSection: {
-    backgroundColor: "#fff",
-    marginBottom: 16,
     paddingHorizontal: 20,
   },
   infoCard: {
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#f5f5f5",
   },
   infoLabel: {
     fontSize: 12,
-    color: "#999",
     marginBottom: 4,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
   infoValue: {
     fontSize: 16,
-    color: "#1A1A2E",
+  },
+  settingRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+  },
+  settingLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 4,
+  },
+  settingSubLabel: {
+    fontSize: 13,
   },
   appInfo: {
     alignItems: "center",
@@ -299,12 +360,10 @@ const styles = StyleSheet.create({
   },
   appInfoVersion: {
     fontSize: 13,
-    color: "#999",
     marginBottom: 4,
   },
   appInfoSubtext: {
     fontSize: 12,
-    color: "#ccc",
   },
   logoutButton: {
     backgroundColor: "#E74C3C",
@@ -317,11 +376,6 @@ const styles = StyleSheet.create({
   logoutText: {
     color: "#fff",
     fontSize: 16,
-    fontWeight: "bold",
-  },
-  editButton: {
-    fontSize: 16,
-    color: "#1A73E8",
     fontWeight: "bold",
   },
 });
