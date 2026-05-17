@@ -17,6 +17,7 @@ import { getSocket } from "../utils/socket";
 import { getToken } from "../utils/storage";
 import api from "../utils/api";
 import { useTheme } from "../context/ThemeContext";
+import * as ImagePicker from "expo-image-picker";
 
 const ChatScreen = ({ route, navigation }) => {
   const { receiverId, receiverName, receiverPhoto } = route.params;
@@ -27,7 +28,7 @@ const ChatScreen = ({ route, navigation }) => {
   const [isTyping, setIsTyping] = useState(false);
   const flatListRef = useRef(null);
   const typingTimeoutRef = useRef(null);
-
+  const [uploading, setUploading] = useState(false);
   const { theme } = useTheme();
 
   useEffect(() => {
@@ -198,6 +199,68 @@ const ChatScreen = ({ route, navigation }) => {
     });
   };
 
+  const uploadImage = async () => {
+    try {
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission needed",
+          "Please allow access to your photo library",
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsEditing: false,
+        quality: 0.7,
+      });
+
+      if (result.canceled) return;
+
+      const imageAsset = result.assets[0];
+      setUploading(true);
+
+      const token = await getToken();
+
+      const formData = new FormData();
+      formData.append("photo", {
+        uri: imageAsset.uri,
+        type: "image/jpeg",
+        name: "chat-image.jpg",
+      });
+
+      const response = await api.post("/api/upload/chat-image", formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      const { imageUrl } = response.data;
+
+      const socket = getSocket();
+      if (!socket) {
+        Alert.alert("Error", "Not connected to server");
+        return;
+      }
+
+      socket.emit("sendMessage", {
+        senderId: user._id,
+        receiverId,
+        text: "",
+        imageUrl,
+        messageType: "image",
+      });
+    } catch (err) {
+      console.log("Image upload error:", err.message);
+      Alert.alert("Error", "Failed to send image");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const renderMessage = ({ item }) => {
     try {
       if (!item) return null;
@@ -221,6 +284,49 @@ const ChatScreen = ({ route, navigation }) => {
         }
       };
 
+      // Image message
+      if (item.messageType === "image" && item.imageUrl) {
+        return (
+          <View
+            style={[
+              styles.messageWrapper,
+              isMine ? styles.myWrapper : styles.theirWrapper,
+            ]}
+          >
+            <View
+              style={[
+                styles.imageBubble,
+                isMine ? styles.myImageBubble : styles.theirImageBubble,
+              ]}
+            >
+              <Image
+                source={{ uri: item.imageUrl }}
+                style={styles.chatImage}
+                resizeMode="cover"
+              />
+            </View>
+            <View
+              style={[
+                styles.messageFooter,
+                isMine ? styles.myFooter : styles.theirFooter,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.messageTime,
+                  isMine ? styles.myMessageTime : styles.theirMessageTime,
+                  { color: theme.textSecondary },
+                ]}
+              >
+                {messageTime}
+              </Text>
+              {renderTicks()}
+            </View>
+          </View>
+        );
+      }
+
+      // Text message
       return (
         <View
           style={[
@@ -328,6 +434,20 @@ const ChatScreen = ({ route, navigation }) => {
           { backgroundColor: theme.card, borderTopColor: theme.border },
         ]}
       >
+        {/* Image upload button */}
+        <TouchableOpacity
+          style={styles.imageButton}
+          onPress={uploadImage}
+          disabled={uploading}
+        >
+          {uploading ? (
+            <ActivityIndicator size="small" color="#1A73E8" />
+          ) : (
+            <Text style={styles.imageButtonText}>📷</Text>
+          )}
+        </TouchableOpacity>
+
+        {/* Text input */}
         <TextInput
           style={[
             styles.input,
@@ -344,6 +464,8 @@ const ChatScreen = ({ route, navigation }) => {
           multiline
           maxLength={500}
         />
+
+        {/* Send button */}
         <TouchableOpacity
           style={[styles.sendButton, !text.trim() && styles.sendButtonDisabled]}
           onPress={sendMessage}
@@ -495,6 +617,32 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#1A73E8",
     fontWeight: "bold",
+  },
+  imageButton: {
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 8,
+  },
+  imageButtonText: {
+    fontSize: 24,
+  },
+  imageBubble: {
+    borderRadius: 12,
+    overflow: "hidden",
+    marginVertical: 2,
+  },
+  myImageBubble: {
+    alignSelf: "flex-end",
+  },
+  theirImageBubble: {
+    alignSelf: "flex-start",
+  },
+  chatImage: {
+    width: 220,
+    height: 220,
+    borderRadius: 12,
   },
 });
 
