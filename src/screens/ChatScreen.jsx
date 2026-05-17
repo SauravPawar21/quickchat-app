@@ -74,6 +74,7 @@ const ChatScreen = ({ route, navigation }) => {
         socket.on("receiveMessage", handleReceiveMessage);
         socket.on("typing", handleTyping);
         socket.on("stopTyping", handleStopTyping);
+        socket.on("messagesRead", handleMessagesRead);
       }
     } catch (err) {
       console.log("useEffect ERROR:", err.message);
@@ -86,6 +87,7 @@ const ChatScreen = ({ route, navigation }) => {
           socket.off("receiveMessage", handleReceiveMessage);
           socket.off("typing", handleTyping);
           socket.off("stopTyping", handleStopTyping);
+          socket.off("messagesRead", handleMessagesRead);
         }
       } catch (err) {
         console.log("cleanup ERROR:", err.message);
@@ -138,6 +140,17 @@ const ChatScreen = ({ route, navigation }) => {
     if (senderId === receiverId) {
       setIsTyping(false);
     }
+  };
+
+  const handleMessagesRead = ({ readBy }) => {
+    setMessages((prev) =>
+      prev.map((msg) => {
+        if (msg.senderId === user._id || msg.senderId?._id === user._id) {
+          return { ...msg, isRead: true };
+        }
+        return msg;
+      }),
+    );
   };
 
   const handleTextChange = (value) => {
@@ -199,33 +212,57 @@ const ChatScreen = ({ route, navigation }) => {
           })
         : "";
 
+      const renderTicks = () => {
+        if (!isMine) return null;
+        if (item.isRead) {
+          return <Text style={styles.readTick}>✓✓</Text>;
+        } else {
+          return <Text style={styles.sentTick}>✓</Text>;
+        }
+      };
+
       return (
         <View
           style={[
-            styles.messageBubble,
-            isMine ? styles.myMessage : styles.theirMessage,
+            styles.messageWrapper,
+            isMine ? styles.myWrapper : styles.theirWrapper,
           ]}
         >
-          <Text
+          <View
             style={[
-              styles.messageText,
-              isMine ? styles.myMessageText : styles.theirMessageText,
+              styles.messageBubble,
+              isMine ? styles.myMessage : styles.theirMessage,
             ]}
           >
-            {item.text}
-          </Text>
-          <Text
+            <Text
+              style={[
+                styles.messageText,
+                isMine ? styles.myMessageText : styles.theirMessageText,
+              ]}
+            >
+              {item.text}
+            </Text>
+          </View>
+          <View
             style={[
-              styles.messageTime,
-              isMine ? styles.myMessageTime : styles.theirMessageTime,
+              styles.messageFooter,
+              isMine ? styles.myFooter : styles.theirFooter,
             ]}
           >
-            {messageTime}
-          </Text>
+            <Text
+              style={[
+                styles.messageTime,
+                isMine ? styles.myMessageTime : styles.theirMessageTime,
+              ]}
+            >
+              {messageTime}
+            </Text>
+            {renderTicks()}
+          </View>
         </View>
       );
     } catch (err) {
-      console.log("renderMessage ERROR:", err.message, err.stack);
+      console.log("renderMessage ERROR:", err.message);
       return null;
     }
   };
@@ -309,19 +346,25 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     flexGrow: 1,
   },
-  messageBubble: {
+  messageWrapper: {
+    marginVertical: 4,
     maxWidth: "75%",
+  },
+  myWrapper: {
+    alignSelf: "flex-end",
+  },
+  theirWrapper: {
+    alignSelf: "flex-start",
+  },
+  messageBubble: {
     padding: 12,
     borderRadius: 16,
-    marginVertical: 4,
   },
   myMessage: {
-    alignSelf: "flex-end",
     backgroundColor: "#1A73E8",
     borderBottomRightRadius: 4,
   },
   theirMessage: {
-    alignSelf: "flex-start",
     backgroundColor: "#fff",
     borderBottomLeftRadius: 4,
     shadowColor: "#000",
@@ -342,11 +385,9 @@ const styles = StyleSheet.create({
   },
   messageTime: {
     fontSize: 11,
-    marginTop: 4,
-    alignSelf: "flex-end",
   },
   myMessageTime: {
-    color: "rgba(255,255,255,0.7)",
+    color: "#999",
   },
   theirMessageTime: {
     color: "#999",
@@ -408,6 +449,27 @@ const styles = StyleSheet.create({
   emptyChatText: {
     fontSize: 16,
     color: "#999",
+  },
+  myFooter: {
+    justifyContent: "flex-end",
+  },
+  theirFooter: {
+    justifyContent: "flex-start",
+  },
+  messageFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 2,
+    gap: 4,
+  },
+  sentTick: {
+    fontSize: 12,
+    color: "#999",
+  },
+  readTick: {
+    fontSize: 12,
+    color: "#1A73E8",
+    fontWeight: "bold",
   },
 });
 
