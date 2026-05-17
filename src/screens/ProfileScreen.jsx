@@ -132,6 +132,9 @@ const ProfileScreen = ({ navigation }) => {
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Profile</Text>
+        <TouchableOpacity onPress={() => navigation.navigate("EditProfile")}>
+          <Text style={styles.editButton}>Edit</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.profileSection}>
@@ -188,6 +191,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#f5f5f5",
   },
   header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 16,
@@ -311,6 +317,11 @@ const styles = StyleSheet.create({
   logoutText: {
     color: "#fff",
     fontSize: 16,
+    fontWeight: "bold",
+  },
+  editButton: {
+    fontSize: 16,
+    color: "#1A73E8",
     fontWeight: "bold",
   },
 });
