@@ -118,7 +118,6 @@ const UsersScreen = ({ navigation }) => {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.surface }]}>
-      {/* Header */}
       <View
         style={[
           styles.header,
@@ -131,7 +130,6 @@ const UsersScreen = ({ navigation }) => {
         </Text>
       </View>
 
-      {/* Search bar */}
       <View
         style={[
           styles.searchContainer,
