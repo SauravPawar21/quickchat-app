@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = "http://192.168.0.105:5000";
+const BASE_URL = "https://quickchat-backend-roey.onrender.com";
 
 const api = axios.create({
   baseURL: BASE_URL,
