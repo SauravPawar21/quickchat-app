@@ -16,6 +16,7 @@ import { setUser } from "../redux/userSlice";
 import { getToken, saveUser } from "../utils/storage";
 import api from "../utils/api";
 import { useTheme } from "../context/ThemeContext";
+import Icon from "./Icons";
 
 const EditProfileScreen = ({ navigation }) => {
   const { user, token } = useSelector((state) => state.user);
@@ -25,22 +26,20 @@ const EditProfileScreen = ({ navigation }) => {
   const [lastName, setLastName] = useState(user?.lastName || "");
   const [bio, setBio] = useState(user?.bio || "");
   const [loading, setLoading] = useState(false);
+  const [focusedField, setFocusedField] = useState(null);
 
   const handleSave = async () => {
     if (!firstName.trim() || !lastName.trim()) {
       Alert.alert("Error", "First name and last name are required");
       return;
     }
-
     if (bio.length > 200) {
       Alert.alert("Error", "Bio must be less than 200 characters");
       return;
     }
-
     try {
       setLoading(true);
       const token = await getToken();
-
       const response = await api.patch(
         "/api/users/profile",
         {
@@ -50,13 +49,9 @@ const EditProfileScreen = ({ navigation }) => {
         },
         { headers: { Authorization: `Bearer ${token}` } },
       );
-
       const updatedUser = response.data.user;
-
       dispatch(setUser({ user: updatedUser, token }));
-
       await saveUser(updatedUser);
-
       Alert.alert("Success", "Profile updated successfully!", [
         { text: "OK", onPress: () => navigation.goBack() },
       ]);
@@ -70,12 +65,27 @@ const EditProfileScreen = ({ navigation }) => {
     }
   };
 
+  const bioPercentage = (bio.length / 200) * 100;
+  const bioColor =
+    bioPercentage > 90
+      ? theme.danger
+      : bioPercentage > 70
+        ? "#F97316"
+        : theme.primary;
+
+  const inputBorderColor = (field) =>
+    focusedField === field ? theme.primary : theme.inputBorder;
+
   return (
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor: theme.surface }]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <ScrollView contentContainerStyle={styles.innerContainer}>
+      <ScrollView
+        contentContainerStyle={styles.innerContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
         <View
           style={[
             styles.header,
@@ -85,103 +95,172 @@ const EditProfileScreen = ({ navigation }) => {
             },
           ]}
         >
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={[styles.cancelButton, { color: theme.textSecondary }]}>
-              Cancel
-            </Text>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={[styles.cancelBtn, { backgroundColor: theme.inputBg }]}
+          >
+            <Icon name="arrowLeft" size={18} color={theme.text} />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: theme.text }]}>
             Edit Profile
           </Text>
-          <TouchableOpacity onPress={handleSave} disabled={loading}>
+          <TouchableOpacity
+            onPress={handleSave}
+            disabled={loading}
+            style={[styles.saveBtn, { backgroundColor: theme.primary }]}
+          >
             {loading ? (
-              <ActivityIndicator size="small" color="#1A73E8" />
+              <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Text style={styles.saveButton}>Save</Text>
+              <Text style={styles.saveText}>Save</Text>
             )}
           </TouchableOpacity>
         </View>
 
+        {/* Form */}
         <View style={[styles.form, { backgroundColor: theme.card }]}>
-          <View
-            style={[styles.inputGroup, { borderBottomColor: theme.border }]}
+          <Text
+            style={[styles.formSectionLabel, { color: theme.textSecondary }]}
           >
-            <Text style={[styles.label, { color: theme.textSecondary }]}>
+            Personal Info
+          </Text>
+
+          {/* First Name */}
+          <View style={[styles.fieldWrap, { borderBottomColor: theme.border }]}>
+            <Text style={[styles.fieldLabel, { color: theme.textSecondary }]}>
               First Name
             </Text>
-            <TextInput
+            <View
               style={[
-                styles.input,
-                { color: theme.text, borderBottomColor: theme.primary },
+                styles.fieldInputWrap,
+                {
+                  borderColor: inputBorderColor("fn"),
+                  backgroundColor: theme.inputBg,
+                },
               ]}
-              value={firstName}
-              onChangeText={setFirstName}
-              placeholder="Enter first name"
-              placeholderTextColor={theme.placeholder}
-              maxLength={50}
-            />
+            >
+              <Icon
+                name="user"
+                size={16}
+                color={
+                  focusedField === "fn" ? theme.primary : theme.textSecondary
+                }
+              />
+              <TextInput
+                style={[styles.fieldInput, { color: theme.text }]}
+                value={firstName}
+                onChangeText={setFirstName}
+                placeholder="Enter first name"
+                placeholderTextColor={theme.placeholder}
+                maxLength={50}
+                onFocus={() => setFocusedField("fn")}
+                onBlur={() => setFocusedField(null)}
+              />
+            </View>
           </View>
 
-          <View
-            style={[styles.inputGroup, { borderBottomColor: theme.border }]}
-          >
-            <Text style={[styles.label, { color: theme.textSecondary }]}>
+          {/* Last Name */}
+          <View style={[styles.fieldWrap, { borderBottomColor: theme.border }]}>
+            <Text style={[styles.fieldLabel, { color: theme.textSecondary }]}>
               Last Name
             </Text>
-            <TextInput
+            <View
               style={[
-                styles.input,
-                { color: theme.text, borderBottomColor: theme.primary },
+                styles.fieldInputWrap,
+                {
+                  borderColor: inputBorderColor("ln"),
+                  backgroundColor: theme.inputBg,
+                },
               ]}
-              value={lastName}
-              onChangeText={setLastName}
-              placeholder="Enter last name"
-              placeholderTextColor={theme.placeholder}
-              maxLength={50}
-            />
+            >
+              <Icon
+                name="user"
+                size={16}
+                color={
+                  focusedField === "ln" ? theme.primary : theme.textSecondary
+                }
+              />
+              <TextInput
+                style={[styles.fieldInput, { color: theme.text }]}
+                value={lastName}
+                onChangeText={setLastName}
+                placeholder="Enter last name"
+                placeholderTextColor={theme.placeholder}
+                maxLength={50}
+                onFocus={() => setFocusedField("ln")}
+                onBlur={() => setFocusedField(null)}
+              />
+            </View>
           </View>
 
+          {/* Bio */}
           <View
-            style={[styles.inputGroup, { borderBottomColor: theme.border }]}
+            style={[styles.fieldWrap, { borderBottomColor: "transparent" }]}
           >
-            <Text style={[styles.label, { color: theme.textSecondary }]}>
-              Bio
-            </Text>
-            <TextInput
+            <View style={styles.bioLabelRow}>
+              <Text style={[styles.fieldLabel, { color: theme.textSecondary }]}>
+                Bio
+              </Text>
+              <Text style={[styles.charCount, { color: bioColor }]}>
+                {bio.length}/200
+              </Text>
+            </View>
+            <View
               style={[
-                styles.input,
-                styles.bioInput,
-                { color: theme.text, borderBottomColor: theme.primary },
+                styles.fieldInputWrap,
+                styles.bioInputWrap,
+                {
+                  borderColor: inputBorderColor("bio"),
+                  backgroundColor: theme.inputBg,
+                },
               ]}
-              value={bio}
-              onChangeText={setBio}
-              placeholder="Write something about yourself..."
-              placeholderTextColor={theme.placeholder}
-              multiline
-              maxLength={200}
-            />
-            <Text style={[styles.charCount, { color: theme.textSecondary }]}>
-              {bio.length}/200
-            </Text>
+            >
+              <TextInput
+                style={[
+                  styles.fieldInput,
+                  styles.bioInput,
+                  { color: theme.text },
+                ]}
+                value={bio}
+                onChangeText={setBio}
+                placeholder="Write something about yourself…"
+                placeholderTextColor={theme.placeholder}
+                multiline
+                maxLength={200}
+                onFocus={() => setFocusedField("bio")}
+                onBlur={() => setFocusedField(null)}
+              />
+            </View>
+            {/* Progress bar */}
+            <View
+              style={[styles.progressBar, { backgroundColor: theme.border }]}
+            >
+              <View
+                style={[
+                  styles.progressFill,
+                  { width: `${bioPercentage}%`, backgroundColor: bioColor },
+                ]}
+              />
+            </View>
           </View>
         </View>
 
-        <Text style={[styles.infoText, { color: theme.textSecondary }]}>
-          Your name and bio are visible to other users
-        </Text>
+        <View
+          style={[styles.hintCard, { backgroundColor: theme.primaryLight }]}
+        >
+          <Icon name="info" size={15} color={theme.primary} />
+          <Text style={[styles.hint, { color: theme.primary }]}>
+            Your name and bio are visible to all QuickChat users
+          </Text>
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f5f5f5",
-  },
-  innerContainer: {
-    flexGrow: 1,
-  },
+  container: { flex: 1 },
+  innerContainer: { flexGrow: 1 },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -189,64 +268,94 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 16,
-    backgroundColor: "#fff",
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#1A1A2E",
+  cancelBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  cancelButton: {
-    fontSize: 16,
-    color: "#999",
+  headerTitle: { fontSize: 17, fontWeight: "700" },
+  saveBtn: {
+    paddingHorizontal: 18,
+    paddingVertical: 9,
+    borderRadius: 20,
   },
-  saveButton: {
-    fontSize: 16,
-    color: "#1A73E8",
-    fontWeight: "bold",
-  },
+  saveText: { fontSize: 14, color: "#fff", fontWeight: "700" },
   form: {
-    backgroundColor: "#fff",
-    marginTop: 20,
+    marginTop: 16,
+    marginHorizontal: 16,
+    borderRadius: 16,
     paddingHorizontal: 20,
+    paddingTop: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  inputGroup: {
-    paddingVertical: 16,
+  formSectionLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    paddingTop: 16,
+    paddingBottom: 12,
+  },
+  fieldWrap: {
+    paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: "#f5f5f5",
   },
-  label: {
-    fontSize: 12,
-    color: "#999",
+  fieldLabel: {
+    fontSize: 11,
     textTransform: "uppercase",
     letterSpacing: 0.5,
-    marginBottom: 8,
+    fontWeight: "700",
+    marginBottom: 10,
   },
-  input: {
-    fontSize: 16,
-    color: "#1A1A2E",
-    paddingVertical: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: "#1A73E8",
+  fieldInputWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1.5,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 10,
   },
-  bioInput: {
-    height: 80,
-    textAlignVertical: "top",
+  bioInputWrap: { alignItems: "flex-start", paddingTop: 12 },
+  fieldInput: { flex: 1, fontSize: 15 },
+  bioInput: { height: 72, textAlignVertical: "top" },
+  bioLabelRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
   },
-  charCount: {
-    fontSize: 12,
-    color: "#999",
-    textAlign: "right",
-    marginTop: 4,
+  charCount: { fontSize: 12, fontWeight: "700" },
+  progressBar: {
+    height: 3,
+    borderRadius: 2,
+    marginTop: 10,
+    overflow: "hidden",
   },
-  infoText: {
+  progressFill: { height: 3, borderRadius: 2 },
+  hintCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginHorizontal: 16,
+    marginTop: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  hint: {
     fontSize: 13,
-    color: "#999",
-    textAlign: "center",
-    paddingHorizontal: 40,
-    marginTop: 24,
+    flex: 1,
+    lineHeight: 18,
+    fontWeight: "500",
   },
 });
 

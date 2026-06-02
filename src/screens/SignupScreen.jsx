@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import api from "../utils/api";
 import { useTheme } from "../context/ThemeContext";
+import Icon from "./Icons";
 
 const SignupScreen = ({ navigation }) => {
   const [firstName, setFirstName] = useState("");
@@ -20,35 +21,28 @@ const SignupScreen = ({ navigation }) => {
   const [emailId, setEmailId] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [focusedField, setFocusedField] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
   const { theme } = useTheme();
 
   const handleSignup = async () => {
     if (!firstName || !lastName || !emailId || !password) {
       Alert.alert("Error", "Please fill in all fields");
     }
-
     if (password.length < 6) {
-      Alert.alert("Error", "Passord must be at least 6 characters");
+      Alert.alert("Error", "Password must be at least 6 characters");
       return;
     }
-
     try {
       setLoading(true);
-
       await api.post("/api/auth/signup", {
         firstName,
         lastName,
         emailId,
         password,
       });
-
       Alert.alert("Success", "Account created! Please login.", [
-        {
-          text: "OK",
-          onPress: () => {
-            navigation.navigate("Login");
-          },
-        },
+        { text: "OK", onPress: () => navigation.navigate("Login") },
       ]);
     } catch (err) {
       Alert.alert(
@@ -60,85 +54,183 @@ const SignupScreen = ({ navigation }) => {
     }
   };
 
+  const inputBorderColor = (field) =>
+    focusedField === field ? theme.primary : theme.inputBorder;
+
   return (
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor: theme.background }]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <ScrollView contentContainerStyle={styles.innerContainer}>
-        <Text style={styles.title}>💬 QuickChat</Text>
+      <View style={[styles.bgBlob, { backgroundColor: theme.primaryLight }]} />
+
+      <ScrollView
+        contentContainerStyle={styles.innerContainer}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Logo */}
+        <View style={styles.logoSection}>
+          <View style={styles.logoBox}>
+            <View style={styles.logoBubble} />
+            <View style={styles.logoDot1} />
+            <View style={styles.logoDot2} />
+            <View style={styles.logoDot3} />
+          </View>
+        </View>
+
+        <Text style={[styles.title, { color: theme.text }]}>
+          Create account
+        </Text>
         <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-          Create your account
+          Join QuickChat today
         </Text>
 
-        <TextInput
-          style={[
-            styles.input,
-            {
-              backgroundColor: theme.inputBg,
-              borderColor: theme.inputBorder,
-              color: theme.text,
-            },
-          ]}
-          placeholder="First name"
-          placeholderTextColor={theme.placeholder}
-          value={firstName}
-          onChangeText={setFirstName}
-        />
+        {/* Name row */}
+        <View style={styles.nameRow}>
+          <View style={[styles.inputGroup, { flex: 1 }]}>
+            <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>
+              First Name
+            </Text>
+            <View
+              style={[
+                styles.inputWrap,
+                {
+                  backgroundColor: theme.inputBg,
+                  borderColor: inputBorderColor("fname"),
+                },
+              ]}
+            >
+              <TextInput
+                style={[styles.input, { color: theme.text }]}
+                placeholder="John"
+                placeholderTextColor={theme.placeholder}
+                value={firstName}
+                onChangeText={setFirstName}
+                onFocus={() => setFocusedField("fname")}
+                onBlur={() => setFocusedField(null)}
+              />
+            </View>
+          </View>
 
-        <TextInput
-          style={styles.input}
-          style={[
-            styles.input,
-            {
-              backgroundColor: theme.inputBg,
-              borderColor: theme.inputBorder,
-              color: theme.text,
-            },
-          ]}
-          placeholder="Last name"
-          placeholderTextColor={theme.placeholder}
-          value={lastName}
-          onChangeText={setLastName}
-        />
+          <View style={{ width: 12 }} />
 
-        <TextInput
-          style={[
-            styles.input,
-            {
-              backgroundColor: theme.inputBg,
-              borderColor: theme.inputBorder,
-              color: theme.text,
-            },
-          ]}
-          placeholder="Email address"
-          placeholderTextColor={theme.placeholder}
-          value={emailId}
-          onChangeText={setEmailId}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
+          <View style={[styles.inputGroup, { flex: 1 }]}>
+            <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>
+              Last Name
+            </Text>
+            <View
+              style={[
+                styles.inputWrap,
+                {
+                  backgroundColor: theme.inputBg,
+                  borderColor: inputBorderColor("lname"),
+                },
+              ]}
+            >
+              <TextInput
+                style={[styles.input, { color: theme.text }]}
+                placeholder="Doe"
+                placeholderTextColor={theme.placeholder}
+                value={lastName}
+                onChangeText={setLastName}
+                onFocus={() => setFocusedField("lname")}
+                onBlur={() => setFocusedField(null)}
+              />
+            </View>
+          </View>
+        </View>
 
-        <TextInput
-          style={[
-            styles.input,
-            {
-              backgroundColor: theme.inputBg,
-              borderColor: theme.inputBorder,
-              color: theme.text,
-            },
-          ]}
-          placeholder="Password (min 6 characters)"
-          placeholderTextColor={theme.placeholder}
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
+        {/* Email */}
+        <View style={styles.inputGroup}>
+          <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>
+            Email
+          </Text>
+          <View
+            style={[
+              styles.inputWrap,
+              {
+                backgroundColor: theme.inputBg,
+                borderColor: inputBorderColor("email"),
+              },
+            ]}
+          >
+            <View style={styles.inputIconWrap}>
+              <Icon
+                name="mail"
+                size={18}
+                color={
+                  focusedField === "email" ? theme.primary : theme.textSecondary
+                }
+              />
+            </View>
+            <TextInput
+              style={[styles.input, { color: theme.text }]}
+              placeholder="you@example.com"
+              placeholderTextColor={theme.placeholder}
+              value={emailId}
+              onChangeText={setEmailId}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              onFocus={() => setFocusedField("email")}
+              onBlur={() => setFocusedField(null)}
+            />
+          </View>
+        </View>
+
+        {/* Password */}
+        <View style={styles.inputGroup}>
+          <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>
+            Password
+          </Text>
+          <View
+            style={[
+              styles.inputWrap,
+              {
+                backgroundColor: theme.inputBg,
+                borderColor: inputBorderColor("pass"),
+              },
+            ]}
+          >
+            <View style={styles.inputIconWrap}>
+              <Icon
+                name="lock"
+                size={18}
+                color={
+                  focusedField === "pass" ? theme.primary : theme.textSecondary
+                }
+              />
+            </View>
+            <TextInput
+              style={[styles.input, { color: theme.text }]}
+              placeholder="Min. 6 characters"
+              placeholderTextColor={theme.placeholder}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              onFocus={() => setFocusedField("pass")}
+              onBlur={() => setFocusedField(null)}
+            />
+            <TouchableOpacity
+              onPress={() => setShowPassword(!showPassword)}
+              style={{ padding: 4 }}
+            >
+              <Icon
+                name={showPassword ? "eyeOff" : "eye"}
+                size={18}
+                color={
+                  focusedField === "pass" ? theme.primary : theme.textSecondary
+                }
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
 
         <TouchableOpacity
-          style={styles.button}
+          style={[styles.button, { backgroundColor: theme.primary }]}
           onPress={handleSignup}
           disabled={loading}
+          activeOpacity={0.85}
         >
           {loading ? (
             <ActivityIndicator color="#fff" />
@@ -147,10 +239,26 @@ const SignupScreen = ({ navigation }) => {
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-          <Text style={[styles.linkText, { color: theme.textSecondary }]}>
-            Already have an account? <Text style={styles.link}>Login</Text>
-          </Text> 
+        <View style={styles.divider}>
+          <View
+            style={[styles.dividerLine, { backgroundColor: theme.border }]}
+          />
+          <Text style={[styles.dividerText, { color: theme.textSecondary }]}>
+            or
+          </Text>
+          <View
+            style={[styles.dividerLine, { backgroundColor: theme.border }]}
+          />
+        </View>
+
+        <TouchableOpacity
+          onPress={() => navigation.navigate("Login")}
+          style={[styles.outlineBtn, { borderColor: theme.border }]}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.outlineBtnText, { color: theme.text }]}>
+            Already have an account? Sign in
+          </Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -158,61 +266,136 @@ const SignupScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
+  container: { flex: 1 },
+  bgBlob: {
+    position: "absolute",
+    width: 320,
+    height: 320,
+    borderRadius: 160,
+    top: -140,
+    right: -80,
+    opacity: 0.6,
   },
   innerContainer: {
     flexGrow: 1,
     justifyContent: "center",
-    paddingHorizontal: 24,
-    paddingVertical: 40,
+    paddingHorizontal: 28,
+    paddingVertical: 48,
+  },
+  logoSection: { alignItems: "center", marginBottom: 28 },
+  logoBox: {
+    width: 68,
+    height: 68,
+    borderRadius: 20,
+    backgroundColor: "#3B6EF8",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#3B6EF8",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  logoBubble: {
+    position: "absolute",
+    width: 38,
+    height: 27,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.95)",
+    bottom: 16,
+    left: 14,
+  },
+  logoDot1: {
+    position: "absolute",
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: "#3B6EF8",
+    bottom: 28,
+    left: 20,
+  },
+  logoDot2: {
+    position: "absolute",
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: "#3B6EF8",
+    bottom: 28,
+    left: 29,
+  },
+  logoDot3: {
+    position: "absolute",
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: "#3B6EF8",
+    bottom: 28,
+    left: 38,
   },
   title: {
-    fontSize: 36,
-    fontWeight: "bold",
-    color: "#1A73E8",
+    fontSize: 26,
+    fontWeight: "800",
+    letterSpacing: -0.5,
+    marginBottom: 6,
     textAlign: "center",
-    marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
-    color: "#999",
+    fontSize: 15,
     textAlign: "center",
-    marginBottom: 40,
+    marginBottom: 28,
+    fontWeight: "400",
   },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    color: "#333",
-    marginBottom: 16,
-    backgroundColor: "#f9f9f9",
+  nameRow: { flexDirection: "row", marginBottom: 0 },
+  inputGroup: { marginBottom: 16 },
+  inputLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+    marginBottom: 8,
+    textTransform: "uppercase",
   },
-  button: {
-    backgroundColor: "#1A73E8",
-    borderRadius: 12,
-    padding: 16,
+  inputWrap: {
+    flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
-    marginTop: 8,
+    borderWidth: 1.5,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+  },
+  inputIconWrap: { marginRight: 10 },
+  input: { flex: 1, fontSize: 15 },
+  button: {
+    borderRadius: 14,
+    padding: 17,
+    alignItems: "center",
+    marginTop: 4,
+    shadowColor: "#3B6EF8",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.28,
+    shadowRadius: 12,
+    elevation: 8,
   },
   buttonText: {
     color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
+    fontSize: 15,
+    fontWeight: "700",
+    letterSpacing: 0.3,
   },
-  linkText: {
-    textAlign: "center",
-    color: "#999",
-    fontSize: 14,
+  divider: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 18,
+    gap: 10,
   },
-  link: {
-    color: "#1A73E8",
-    fontWeight: "bold",
+  dividerLine: { flex: 1, height: 1 },
+  dividerText: { fontSize: 13, fontWeight: "500" },
+  outlineBtn: {
+    borderWidth: 1.5,
+    borderRadius: 14,
+    padding: 16,
+    alignItems: "center",
   },
+  outlineBtnText: { fontSize: 15, fontWeight: "600" },
 });
 
 export default SignupScreen;

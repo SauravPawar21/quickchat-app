@@ -18,6 +18,7 @@ import { getToken } from "../utils/storage";
 import api from "../utils/api";
 import { useTheme } from "../context/ThemeContext";
 import * as ImagePicker from "expo-image-picker";
+import Icon from "./Icons";
 
 const ChatScreen = ({ route, navigation }) => {
   const { receiverId, receiverName, receiverPhoto } = route.params;
@@ -48,18 +49,20 @@ const ChatScreen = ({ route, navigation }) => {
                   width: 36,
                   height: 36,
                   borderRadius: 18,
-                  backgroundColor: "#1A73E8",
+                  backgroundColor: "#3B6EF8",
                   justifyContent: "center",
                   alignItems: "center",
                 }}
               >
-                <Text style={{ color: "#fff", fontWeight: "bold" }}>
+                <Text
+                  style={{ color: "#fff", fontWeight: "bold", fontSize: 14 }}
+                >
                   {receiverName[0]}
                 </Text>
               </View>
             )}
             <Text
-              style={{ fontSize: 16, fontWeight: "bold", color: theme.text }}
+              style={{ fontSize: 16, fontWeight: "700", color: theme.text }}
             >
               {receiverName}
             </Text>
@@ -100,18 +103,14 @@ const ChatScreen = ({ route, navigation }) => {
     try {
       setLoading(true);
       const token = await getToken();
-
       const response = await api.get(`/api/messages/${receiverId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setMessages(response.data.messages || response.data.message || []);
-
       await api.patch(
         `/api/messages/read/${receiverId}`,
         {},
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
+        { headers: { Authorization: `Bearer ${token}` } },
       );
     } catch (err) {
       setMessages([]);
@@ -122,33 +121,24 @@ const ChatScreen = ({ route, navigation }) => {
   };
 
   const handleReceiveMessage = (message) => {
-    setMessages((prev) => {
-      const prevMessages = prev || [];
-      return [...prevMessages, message];
-    });
+    setMessages((prev) => [...(prev || []), message]);
     setTimeout(() => {
       flatListRef.current?.scrollToEnd({ animated: true });
     }, 100);
   };
 
   const handleTyping = ({ senderId }) => {
-    if (senderId === receiverId) {
-      setIsTyping(true);
-    }
+    if (senderId === receiverId) setIsTyping(true);
   };
-
   const handleStopTyping = ({ senderId }) => {
-    if (senderId === receiverId) {
-      setIsTyping(false);
-    }
+    if (senderId === receiverId) setIsTyping(false);
   };
 
   const handleMessagesRead = ({ readBy }) => {
     setMessages((prev) =>
       prev.map((msg) => {
-        if (msg.senderId === user._id || msg.senderId?._id === user._id) {
+        if (msg.senderId === user._id || msg.senderId?._id === user._id)
           return { ...msg, isRead: true };
-        }
         return msg;
       }),
     );
@@ -156,47 +146,29 @@ const ChatScreen = ({ route, navigation }) => {
 
   const handleTextChange = (value) => {
     setText(value);
-
     const socket = getSocket();
     if (!socket) return;
-    socket.emit("typing", {
-      senderId: user._id,
-      receiverId,
-    });
-
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
-
+    socket.emit("typing", { senderId: user._id, receiverId });
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     typingTimeoutRef.current = setTimeout(() => {
-      socket.emit("stopTyping", {
-        senderId: user._id,
-        receiverId,
-      });
+      socket.emit("stopTyping", { senderId: user._id, receiverId });
     }, 1000);
   };
 
   const sendMessage = () => {
     if (!text.trim()) return;
-
     const socket = getSocket();
     if (!socket) {
       Alert.alert("Error", "Not connected to server");
       return;
     }
-
     socket.emit("sendMessage", {
       senderId: user._id,
       receiverId,
       text: text.trim(),
     });
-
     setText("");
-
-    socket.emit("stopTyping", {
-      senderId: user._id,
-      receiverId,
-    });
+    socket.emit("stopTyping", { senderId: user._id, receiverId });
   };
 
   const uploadImage = async () => {
@@ -210,42 +182,33 @@ const ChatScreen = ({ route, navigation }) => {
         );
         return;
       }
-
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ["images"],
         allowsEditing: false,
         quality: 0.7,
       });
-
       if (result.canceled) return;
-
       const imageAsset = result.assets[0];
       setUploading(true);
-
       const token = await getToken();
-
       const formData = new FormData();
       formData.append("photo", {
         uri: imageAsset.uri,
         type: "image/jpeg",
         name: "chat-image.jpg",
       });
-
       const response = await api.post("/api/upload/chat-image", formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
         },
       });
-
       const { imageUrl } = response.data;
-
       const socket = getSocket();
       if (!socket) {
         Alert.alert("Error", "Not connected to server");
         return;
       }
-
       socket.emit("sendMessage", {
         senderId: user._id,
         receiverId,
@@ -254,7 +217,6 @@ const ChatScreen = ({ route, navigation }) => {
         messageType: "image",
       });
     } catch (err) {
-      console.log("Image upload error:", err.message);
       Alert.alert("Error", "Failed to send image");
     } finally {
       setUploading(false);
@@ -264,10 +226,8 @@ const ChatScreen = ({ route, navigation }) => {
   const renderMessage = ({ item }) => {
     try {
       if (!item) return null;
-
       const isMine =
         item.senderId === user._id || item.senderId?._id === user._id;
-
       const messageTime = item.createdAt
         ? new Date(item.createdAt).toLocaleTimeString([], {
             hour: "2-digit",
@@ -277,14 +237,13 @@ const ChatScreen = ({ route, navigation }) => {
 
       const renderTicks = () => {
         if (!isMine) return null;
-        if (item.isRead) {
-          return <Text style={styles.readTick}>✓✓</Text>;
-        } else {
-          return <Text style={styles.sentTick}>✓</Text>;
-        }
+        return item.isRead ? (
+          <Icon name="checkCheck" size={12} color="#93C5FD" />
+        ) : (
+          <Icon name="check" size={12} color="rgba(255,255,255,0.55)" />
+        );
       };
 
-      // Image message
       if (item.messageType === "image" && item.imageUrl) {
         return (
           <View
@@ -314,8 +273,9 @@ const ChatScreen = ({ route, navigation }) => {
               <Text
                 style={[
                   styles.messageTime,
-                  isMine ? styles.myMessageTime : styles.theirMessageTime,
-                  { color: theme.textSecondary },
+                  isMine
+                    ? styles.myMessageTime
+                    : [styles.theirMessageTime, { color: theme.textSecondary }],
                 ]}
               >
                 {messageTime}
@@ -326,7 +286,6 @@ const ChatScreen = ({ route, navigation }) => {
         );
       }
 
-      // Text message
       return (
         <View
           style={[
@@ -338,7 +297,7 @@ const ChatScreen = ({ route, navigation }) => {
             style={[
               styles.messageBubble,
               isMine
-                ? styles.myMessage
+                ? [styles.myMessage, { backgroundColor: theme.primary }]
                 : [
                     styles.theirMessage,
                     { backgroundColor: theme.messageBubbleOther },
@@ -387,8 +346,8 @@ const ChatScreen = ({ route, navigation }) => {
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#1A73E8" />
+      <View style={[styles.centered, { backgroundColor: theme.chatBg }]}>
+        <ActivityIndicator size="large" color={theme.primary} />
       </View>
     );
   }
@@ -411,19 +370,56 @@ const ChatScreen = ({ route, navigation }) => {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.emptyChat}>
-            <Text
-              style={[styles.emptyChatText, { color: theme.textSecondary }]}
+            <View
+              style={[
+                styles.emptyIconWrap,
+                { backgroundColor: theme.primaryLight },
+              ]}
             >
-              No messages yet. Say hello! 👋
+              <Icon name="messageCircle" size={32} color={theme.primary} />
+            </View>
+            <Text style={[styles.emptyChatText, { color: theme.text }]}>
+              No messages yet
+            </Text>
+            <Text style={[styles.emptyChatSub, { color: theme.textSecondary }]}>
+              Say hello to {receiverName}!
             </Text>
           </View>
         }
       />
 
       {isTyping && (
-        <View style={[styles.typingContainer, { backgroundColor: theme.card }]}>
+        <View
+          style={[
+            styles.typingContainer,
+            { backgroundColor: theme.card, borderTopColor: theme.border },
+          ]}
+        >
+          <View style={styles.typingBubble}>
+            <View
+              style={[
+                styles.dot,
+                styles.dot1,
+                { backgroundColor: theme.textSecondary },
+              ]}
+            />
+            <View
+              style={[
+                styles.dot,
+                styles.dot2,
+                { backgroundColor: theme.textSecondary },
+              ]}
+            />
+            <View
+              style={[
+                styles.dot,
+                styles.dot3,
+                { backgroundColor: theme.textSecondary },
+              ]}
+            />
+          </View>
           <Text style={[styles.typingText, { color: theme.textSecondary }]}>
-            {receiverName} is typing...
+            {receiverName} is typing
           </Text>
         </View>
       )}
@@ -434,20 +430,19 @@ const ChatScreen = ({ route, navigation }) => {
           { backgroundColor: theme.card, borderTopColor: theme.border },
         ]}
       >
-        {/* Image upload button */}
         <TouchableOpacity
-          style={styles.imageButton}
+          style={[styles.imageButton, { backgroundColor: theme.inputBg }]}
           onPress={uploadImage}
           disabled={uploading}
+          activeOpacity={0.7}
         >
           {uploading ? (
-            <ActivityIndicator size="small" color="#1A73E8" />
+            <ActivityIndicator size="small" color={theme.primary} />
           ) : (
-            <Text style={styles.imageButtonText}>📷</Text>
+            <Icon name="image" size={20} color={theme.textSecondary} />
           )}
         </TouchableOpacity>
 
-        {/* Text input */}
         <TextInput
           style={[
             styles.input,
@@ -457,7 +452,7 @@ const ChatScreen = ({ route, navigation }) => {
               color: theme.text,
             },
           ]}
-          placeholder="Type a message..."
+          placeholder="Message…"
           placeholderTextColor={theme.placeholder}
           value={text}
           onChangeText={handleTextChange}
@@ -465,13 +460,22 @@ const ChatScreen = ({ route, navigation }) => {
           maxLength={500}
         />
 
-        {/* Send button */}
         <TouchableOpacity
-          style={[styles.sendButton, !text.trim() && styles.sendButtonDisabled]}
+          style={[
+            styles.sendButton,
+            {
+              backgroundColor: text.trim() ? theme.primary : theme.inputBg,
+            },
+          ]}
           onPress={sendMessage}
           disabled={!text.trim()}
+          activeOpacity={0.85}
         >
-          <Text style={styles.sendButtonText}>Send</Text>
+          <Icon
+            name="send"
+            size={18}
+            color={text.trim() ? "#fff" : theme.placeholder}
+          />
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -479,171 +483,116 @@ const ChatScreen = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f5f5f5",
-  },
-  centered: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  messagesList: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    flexGrow: 1,
-  },
-  messageWrapper: {
-    marginVertical: 4,
-    maxWidth: "75%",
-  },
-  myWrapper: {
-    alignSelf: "flex-end",
-  },
-  theirWrapper: {
-    alignSelf: "flex-start",
-  },
+  container: { flex: 1 },
+  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
+  messagesList: { paddingHorizontal: 14, paddingVertical: 16, flexGrow: 1 },
+  messageWrapper: { marginVertical: 3, maxWidth: "78%" },
+  myWrapper: { alignSelf: "flex-end" },
+  theirWrapper: { alignSelf: "flex-start" },
   messageBubble: {
-    padding: 12,
-    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 18,
   },
   myMessage: {
-    backgroundColor: "#1A73E8",
-    borderBottomRightRadius: 4,
+    borderBottomRightRadius: 5,
+    shadowColor: "#3B6EF8",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   theirMessage: {
-    backgroundColor: "#fff",
-    borderBottomLeftRadius: 4,
+    borderBottomLeftRadius: 5,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
     elevation: 2,
   },
-  messageText: {
-    fontSize: 15,
-    lineHeight: 20,
+  messageText: { fontSize: 15, lineHeight: 21 },
+  myMessageText: { color: "#fff" },
+  theirMessageText: {},
+  messageTime: { fontSize: 11 },
+  myMessageTime: { color: "rgba(255,255,255,0.55)" },
+  theirMessageTime: {},
+  messageFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 4,
+    gap: 4,
   },
-  myMessageText: {
-    color: "#fff",
-  },
-  theirMessageText: {
-    color: "#333",
-  },
-  messageTime: {
-    fontSize: 11,
-  },
-  myMessageTime: {
-    color: "#999",
-  },
-  theirMessageTime: {
-    color: "#999",
-  },
+  myFooter: { justifyContent: "flex-end" },
+  theirFooter: { justifyContent: "flex-start" },
   typingContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 6,
-    backgroundColor: "#fff",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    gap: 10,
+    borderTopWidth: 1,
   },
-  typingText: {
-    fontSize: 13,
-    color: "#999",
-    fontStyle: "italic",
+  typingBubble: {
+    flexDirection: "row",
+    gap: 3,
+    alignItems: "center",
   },
+  dot: { width: 5, height: 5, borderRadius: 2.5 },
+  dot1: {},
+  dot2: {},
+  dot3: {},
+  typingText: { fontSize: 13, fontStyle: "italic", fontWeight: "400" },
   inputContainer: {
     flexDirection: "row",
     alignItems: "flex-end",
     paddingHorizontal: 12,
     paddingVertical: 10,
-    backgroundColor: "#fff",
     borderTopWidth: 1,
-    borderTopColor: "#f0f0f0",
-  },
-  input: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 24,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    fontSize: 15,
-    color: "#333",
-    backgroundColor: "#f9f9f9",
-    maxHeight: 100,
-    marginRight: 8,
-  },
-  sendButton: {
-    backgroundColor: "#1A73E8",
-    borderRadius: 24,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  sendButtonDisabled: {
-    backgroundColor: "#ccc",
-  },
-  sendButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 15,
-  },
-  emptyChat: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingTop: 100,
-  },
-  emptyChatText: {
-    fontSize: 16,
-    color: "#999",
-  },
-  myFooter: {
-    justifyContent: "flex-end",
-  },
-  theirFooter: {
-    justifyContent: "flex-start",
-  },
-  messageFooter: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 2,
-    gap: 4,
-  },
-  sentTick: {
-    fontSize: 12,
-    color: "#999",
-  },
-  readTick: {
-    fontSize: 12,
-    color: "#1A73E8",
-    fontWeight: "bold",
+    gap: 8,
   },
   imageButton: {
     width: 40,
     height: 40,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 8,
-  },
-  imageButtonText: {
-    fontSize: 24,
-  },
-  imageBubble: {
-    borderRadius: 12,
-    overflow: "hidden",
-    marginVertical: 2,
-  },
-  myImageBubble: {
-    alignSelf: "flex-end",
-  },
-  theirImageBubble: {
-    alignSelf: "flex-start",
-  },
-  chatImage: {
-    width: 220,
-    height: 220,
     borderRadius: 12,
   },
+  input: {
+    flex: 1,
+    borderWidth: 1.5,
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    fontSize: 15,
+    maxHeight: 100,
+  },
+  sendButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  emptyChat: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: 80,
+  },
+  emptyIconWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: 22,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 14,
+  },
+  emptyChatText: { fontSize: 17, fontWeight: "700", marginBottom: 6 },
+  emptyChatSub: { fontSize: 13 },
+  imageBubble: { borderRadius: 14, overflow: "hidden", marginVertical: 2 },
+  myImageBubble: { alignSelf: "flex-end" },
+  theirImageBubble: { alignSelf: "flex-start" },
+  chatImage: { width: 220, height: 220, borderRadius: 14 },
 });
 
 export default ChatScreen;

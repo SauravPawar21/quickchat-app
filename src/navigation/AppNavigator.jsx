@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useSelector } from "react-redux";
-import { Text } from "react-native";
 import { useTheme } from "../context/ThemeContext";
 
 import SplashScreen from "../screens/SplashScreen";
@@ -14,6 +13,7 @@ import ChatScreen from "../screens/ChatScreen";
 import UsersScreen from "../screens/UsersScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 import EditProfileScreen from "../screens/EditProfileScreen";
+import Icon from "../screens/Icons";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -40,7 +40,13 @@ const MainTabs = () => {
         component={HomeScreen}
         options={{
           tabBarLabel: "Chats",
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20 }}>💬</Text>,
+          tabBarIcon: ({ focused, color }) => (
+            <Icon
+              name={focused ? "messageCircleFilled" : "messageCircleOutline"}
+              size={24}
+              color={color}
+            />
+          ),
         }}
       />
       <Tab.Screen
@@ -48,7 +54,13 @@ const MainTabs = () => {
         component={UsersScreen}
         options={{
           tabBarLabel: "People",
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20 }}>👥</Text>,
+          tabBarIcon: ({ focused, color }) => (
+            <Icon
+              name={focused ? "usersFilled" : "usersOutline"}
+              size={24}
+              color={color}
+            />
+          ),
         }}
       />
       <Tab.Screen
@@ -56,7 +68,13 @@ const MainTabs = () => {
         component={ProfileScreen}
         options={{
           tabBarLabel: "Profile",
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20 }}>👤</Text>,
+          tabBarIcon: ({ focused, color }) => (
+            <Icon
+              name={focused ? "userFilled" : "userOutline"}
+              size={24}
+              color={color}
+            />
+          ),
         }}
       />
     </Tab.Navigator>

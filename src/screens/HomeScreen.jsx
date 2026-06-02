@@ -13,6 +13,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { getToken } from "../utils/storage";
 import api from "../utils/api";
 import { useTheme } from "../context/ThemeContext";
+import Icon from "./Icons";
 
 const HomeScreen = ({ navigation }) => {
   const [conversations, setConversations] = useState([]);
@@ -29,11 +30,9 @@ const HomeScreen = ({ navigation }) => {
     try {
       setLoading(true);
       const token = await getToken();
-      console.log("TOKEN:", token);
       const response = await api.get("/api/users/conversations/list", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      console.log("Logged In User:", response.data);
       setConversations(response.data.conversations || []);
     } catch (err) {
       Alert.alert("Error", "Failed to load conversations");
@@ -47,7 +46,12 @@ const HomeScreen = ({ navigation }) => {
       {user?.photoUrl && !user.photoUrl.includes("avatar.iran.liara.run") ? (
         <Image source={{ uri: user.photoUrl }} style={styles.avatarImage} />
       ) : (
-        <View style={styles.avatar}>
+        <View
+          style={[
+            styles.avatar,
+            { backgroundColor: getAvatarColor(user?.firstName) },
+          ]}
+        >
           <Text style={styles.avatarText}>
             {user?.firstName?.[0]}
             {user?.lastName?.[0]}
@@ -57,11 +61,25 @@ const HomeScreen = ({ navigation }) => {
       <View
         style={[
           styles.onlineDot,
-          { backgroundColor: user?.isOnline ? "#16A085" : "#ccc" },
+          { backgroundColor: user?.isOnline ? theme.success : theme.border },
+          { borderColor: theme.card },
         ]}
       />
     </View>
   );
+
+  const getAvatarColor = (name) => {
+    const colors = [
+      "#3B6EF8",
+      "#E24F7A",
+      "#8B5CF6",
+      "#F97316",
+      "#059669",
+      "#D97706",
+    ];
+    if (!name) return colors[0];
+    return colors[name.charCodeAt(0) % colors.length];
+  };
 
   const formatTime = (dateString) => {
     if (!dateString) return "";
@@ -69,24 +87,19 @@ const HomeScreen = ({ navigation }) => {
     const now = new Date();
     const diff = now - date;
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-
-    if (days === 0) {
+    if (days === 0)
       return date.toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
       });
-    } else if (days === 1) {
-      return "Yesterday";
-    } else if (days < 7) {
-      return date.toLocaleDateString([], { weekday: "short" });
-    } else {
-      return date.toLocaleDateString([], { month: "short", day: "numeric" });
-    }
+    else if (days === 1) return "Yesterday";
+    else if (days < 7) return date.toLocaleDateString([], { weekday: "short" });
+    else return date.toLocaleDateString([], { month: "short", day: "numeric" });
   };
 
   const renderConversation = ({ item }) => (
     <TouchableOpacity
-      style={[styles.conversationItem, { borderBottomColor: theme.border }]}
+      style={[styles.conversationItem, { backgroundColor: theme.card }]}
       onPress={() =>
         navigation.navigate("Chat", {
           receiverId: item.user._id,
@@ -94,11 +107,15 @@ const HomeScreen = ({ navigation }) => {
           receiverPhoto: item.user.photoUrl,
         })
       }
+      activeOpacity={0.7}
     >
       {renderAvatar(item.user)}
       <View style={styles.conversationInfo}>
         <View style={styles.conversationHeader}>
-          <Text style={[styles.conversationName, { color: theme.text }]}>
+          <Text
+            style={[styles.conversationName, { color: theme.text }]}
+            numberOfLines={1}
+          >
             {item.user.firstName} {item.user.lastName}
           </Text>
           <Text
@@ -119,9 +136,9 @@ const HomeScreen = ({ navigation }) => {
             {item.lastMessage}
           </Text>
           {!item.isRead && (
-            <View style={styles.unreadBadge}>
-              <Text style={styles.unreadBadgeText}>●</Text>
-            </View>
+            <View
+              style={[styles.unreadDot, { backgroundColor: theme.primary }]}
+            />
           )}
         </View>
       </View>
@@ -130,8 +147,8 @@ const HomeScreen = ({ navigation }) => {
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#1A73E8" />
+      <View style={[styles.centered, { backgroundColor: theme.surface }]}>
+        <ActivityIndicator size="large" color={theme.primary} />
       </View>
     );
   }
@@ -144,23 +161,51 @@ const HomeScreen = ({ navigation }) => {
           { backgroundColor: theme.headerBg, borderBottomColor: theme.border },
         ]}
       >
-        <Text style={[styles.headerTitle, { color: theme.text }]}>
-          💬 Chats
-        </Text>
+        <View>
+          <Text style={[styles.headerTitle, { color: theme.text }]}>
+            Messages
+          </Text>
+          {conversations.length > 0 && (
+            <Text
+              style={[styles.headerSubtitle, { color: theme.textSecondary }]}
+            >
+              {conversations.length} conversation
+              {conversations.length !== 1 ? "s" : ""}
+            </Text>
+          )}
+        </View>
+        <View
+          style={[
+            styles.headerIconWrap,
+            { backgroundColor: theme.primaryLight },
+          ]}
+        >
+          <Icon name="messageCircle" size={20} color={theme.primary} />
+        </View>
       </View>
 
       {conversations.length === 0 ? (
         <View style={styles.centered}>
+          <View
+            style={[
+              styles.emptyIllustration,
+              { backgroundColor: theme.primaryLight },
+            ]}
+          >
+            <Icon name="messageCircle" size={40} color={theme.primary} />
+          </View>
           <Text style={[styles.emptyText, { color: theme.text }]}>
-            No conversations yet
+            No messages yet
           </Text>
           <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
-            Go to People tab to find someone to chat with!
+            Start a conversation by finding people in the People tab
           </Text>
           <TouchableOpacity
-            style={styles.findButton}
+            style={[styles.findButton, { backgroundColor: theme.primary }]}
             onPress={() => navigation.navigate("Users")}
+            activeOpacity={0.85}
           >
+            <Icon name="users" size={16} color="#fff" />
             <Text style={styles.findButtonText}>Find People</Text>
           </TouchableOpacity>
         </View>
@@ -171,6 +216,7 @@ const HomeScreen = ({ navigation }) => {
           renderItem={renderConversation}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContainer}
+          ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
         />
       )}
     </View>
@@ -178,10 +224,7 @@ const HomeScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
+  container: { flex: 1 },
   centered: {
     flex: 1,
     justifyContent: "center",
@@ -189,58 +232,63 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#1A1A2E",
+    fontSize: 26,
+    fontWeight: "800",
+    letterSpacing: -0.5,
   },
-  listContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
+  headerSubtitle: {
+    fontSize: 13,
+    fontWeight: "500",
+    marginTop: 2,
   },
+  headerIconWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  listContainer: { padding: 12, paddingTop: 16 },
   conversationItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f5f5f5",
+    padding: 14,
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  avatarContainer: {
-    position: "relative",
-    marginRight: 14,
-  },
+  avatarContainer: { position: "relative", marginRight: 14 },
   avatar: {
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: "#1A73E8",
     justifyContent: "center",
     alignItems: "center",
   },
-  avatarText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
+  avatarImage: { width: 52, height: 52, borderRadius: 26 },
+  avatarText: { color: "#fff", fontSize: 17, fontWeight: "700" },
   onlineDot: {
     position: "absolute",
-    bottom: 2,
-    right: 2,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    bottom: 1,
+    right: 1,
+    width: 13,
+    height: 13,
+    borderRadius: 7,
     borderWidth: 2,
-    borderColor: "#fff",
   },
-  conversationInfo: {
-    flex: 1,
-  },
+  conversationInfo: { flex: 1 },
   conversationHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -248,63 +296,54 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   conversationName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1A1A2E",
+    fontSize: 15,
+    fontWeight: "700",
+    flex: 1,
+    marginRight: 8,
   },
-  conversationTime: {
-    fontSize: 12,
-    color: "#999",
+  conversationTime: { fontSize: 12, fontWeight: "500" },
+  lastMessageRow: { flexDirection: "row", alignItems: "center" },
+  lastMessage: { fontSize: 13, flex: 1 },
+  unreadDot: {
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    marginLeft: 8,
   },
-  lastMessage: {
-    fontSize: 13,
-    color: "#999",
+  emptyIllustration: {
+    width: 88,
+    height: 88,
+    borderRadius: 28,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 20,
   },
   emptyText: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
+    fontSize: 19,
+    fontWeight: "800",
     marginBottom: 8,
     textAlign: "center",
   },
   emptySubtext: {
     fontSize: 14,
-    color: "#999",
     textAlign: "center",
-    marginBottom: 24,
+    marginBottom: 28,
+    lineHeight: 20,
   },
   findButton: {
-    backgroundColor: "#1A73E8",
-    borderRadius: 12,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-  },
-  findButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 15,
-  },
-  lastMessageRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    gap: 8,
+    borderRadius: 14,
+    paddingHorizontal: 24,
+    paddingVertical: 13,
+    shadowColor: "#3B6EF8",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 6,
   },
-  unreadMessage: {
-    color: "#1A1A2E",
-    fontWeight: "600",
-  },
-  unreadBadge: {
-    marginLeft: 8,
-  },
-  unreadBadgeText: {
-    color: "#1A73E8",
-    fontSize: 16,
-  },
-  avatarImage: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-  },
+  findButtonText: { color: "#fff", fontWeight: "700", fontSize: 15 },
 });
 
 export default HomeScreen;

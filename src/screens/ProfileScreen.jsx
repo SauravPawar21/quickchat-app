@@ -17,6 +17,7 @@ import { removeToken, removeUser, getToken, saveUser } from "../utils/storage";
 import { disconnectSocket } from "../utils/socket";
 import api from "../utils/api";
 import { useTheme } from "../context/ThemeContext";
+import Icon from "./Icons";
 
 const ProfileScreen = ({ navigation }) => {
   const { user } = useSelector((state) => state.user);
@@ -25,10 +26,10 @@ const ProfileScreen = ({ navigation }) => {
   const [uploading, setUploading] = useState(false);
 
   const handleLogout = () => {
-    Alert.alert("Logout", "Are you sure you want to logout?", [
+    Alert.alert("Sign Out", "Are you sure you want to sign out?", [
       { text: "Cancel", style: "cancel" },
       {
-        text: "Logout",
+        text: "Sign Out",
         style: "destructive",
         onPress: async () => {
           await api.post("/api/auth/logout");
@@ -46,7 +47,6 @@ const ProfileScreen = ({ navigation }) => {
     try {
       const { status } =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
-
       if (status !== "granted") {
         Alert.alert(
           "Permission needed",
@@ -54,16 +54,13 @@ const ProfileScreen = ({ navigation }) => {
         );
         return;
       }
-
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.7,
       });
-
       if (result.canceled) return;
-
       await uploadPhoto(result.assets[0]);
     } catch (err) {
       Alert.alert("Error", "Failed to pick image");
@@ -73,34 +70,41 @@ const ProfileScreen = ({ navigation }) => {
   const uploadPhoto = async (imageAsset) => {
     try {
       setUploading(true);
-
       const token = await getToken();
-
       const formData = new FormData();
       formData.append("photo", {
         uri: imageAsset.uri,
         type: "image/jpeg",
         name: "profile-photo.jpg",
       });
-
       const response = await api.post("/api/upload/profile-photo", formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
         },
       });
-
       const updatedUser = response.data.user;
       dispatch(setUser({ user: updatedUser, token }));
       await saveUser(updatedUser);
-
       Alert.alert("Success", "Profile photo updated!");
     } catch (err) {
-      console.log("Upload error:", err.message);
       Alert.alert("Error", "Failed to upload photo");
     } finally {
       setUploading(false);
     }
+  };
+
+  const getAvatarColor = (name) => {
+    const colors = [
+      "#3B6EF8",
+      "#E24F7A",
+      "#8B5CF6",
+      "#F97316",
+      "#059669",
+      "#D97706",
+    ];
+    if (!name) return colors[0];
+    return colors[name.charCodeAt(0) % colors.length];
   };
 
   const renderAvatar = () => (
@@ -108,30 +112,57 @@ const ProfileScreen = ({ navigation }) => {
       style={styles.avatarContainer}
       onPress={handlePickPhoto}
       disabled={uploading}
+      activeOpacity={0.85}
     >
       {user?.photoUrl && !user.photoUrl.includes("avatar.iran.liara.run") ? (
         <Image source={{ uri: user.photoUrl }} style={styles.avatarImage} />
       ) : (
-        <View style={styles.avatar}>
+        <View
+          style={[
+            styles.avatar,
+            { backgroundColor: getAvatarColor(user?.firstName) },
+          ]}
+        >
           <Text style={styles.avatarText}>
             {user?.firstName?.[0]}
             {user?.lastName?.[0]}
           </Text>
         </View>
       )}
-
-      <View style={styles.avatarOverlay}>
+      <View style={[styles.avatarOverlay, { borderColor: theme.surface }]}>
         {uploading ? (
           <ActivityIndicator color="#fff" size="small" />
         ) : (
-          <Text style={styles.avatarOverlayText}>📷</Text>
+          <Icon name="camera" size={14} color="#fff" />
         )}
       </View>
     </TouchableOpacity>
   );
 
+  const InfoRow = ({ label, value, iconName }) => (
+    <View style={[styles.infoRow, { borderBottomColor: theme.border }]}>
+      <View
+        style={[styles.infoIconWrap, { backgroundColor: theme.primaryLight }]}
+      >
+        <Icon name={iconName} size={16} color={theme.primary} />
+      </View>
+      <View style={styles.infoContent}>
+        <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>
+          {label}
+        </Text>
+        <Text style={[styles.infoValue, { color: theme.text }]}>
+          {value || "—"}
+        </Text>
+      </View>
+    </View>
+  );
+
   return (
-    <ScrollView style={[styles.container, { backgroundColor: theme.surface }]}>
+    <ScrollView
+      style={[styles.container, { backgroundColor: theme.surface }]}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Header */}
       <View
         style={[
           styles.header,
@@ -139,109 +170,130 @@ const ProfileScreen = ({ navigation }) => {
         ]}
       >
         <Text style={[styles.headerTitle, { color: theme.text }]}>Profile</Text>
-        <TouchableOpacity onPress={() => navigation.navigate("EditProfile")}>
-          <Text style={styles.editButton}>Edit</Text>
+        <TouchableOpacity
+          style={[styles.editBtn, { backgroundColor: theme.primaryLight }]}
+          onPress={() => navigation.navigate("EditProfile")}
+          activeOpacity={0.8}
+        >
+          <Icon name="edit" size={15} color={theme.primary} />
+          <Text style={[styles.editBtnText, { color: theme.primary }]}>
+            Edit
+          </Text>
         </TouchableOpacity>
       </View>
 
-      <View style={[styles.profileSection, { backgroundColor: theme.card }]}>
+      {/* Hero section */}
+      <View style={[styles.heroSection, { backgroundColor: theme.card }]}>
         {renderAvatar()}
-        <Text style={styles.tapText}>
-          {uploading ? "Uploading..." : "Tap to change photo"}
+        <Text style={[styles.tapHint, { color: theme.textSecondary }]}>
+          {uploading ? "Uploading…" : "Tap photo to change"}
         </Text>
-        <Text style={[styles.name, { color: theme.text }]}>
+        <Text style={[styles.heroName, { color: theme.text }]}>
           {user?.firstName} {user?.lastName}
         </Text>
-        <Text style={[styles.email, { color: theme.textSecondary }]}>
+        <Text style={[styles.heroEmail, { color: theme.textSecondary }]}>
           {user?.emailId}
         </Text>
+        {user?.bio ? (
+          <View style={[styles.bioPill, { backgroundColor: theme.surface }]}>
+            <Text style={[styles.bioText, { color: theme.textSecondary }]}>
+              {user.bio}
+            </Text>
+          </View>
+        ) : null}
       </View>
 
-      <View style={[styles.infoSection, { backgroundColor: theme.card }]}>
-        <View style={[styles.infoCard, { borderBottomColor: theme.border }]}>
-          <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>
-            First Name
-          </Text>
-          <Text style={[styles.infoValue, { color: theme.text }]}>
-            {user?.firstName}
-          </Text>
-        </View>
-
-        <View style={[styles.infoCard, { borderBottomColor: theme.border }]}>
-          <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>
-            Last Name
-          </Text>
-          <Text style={[styles.infoValue, { color: theme.text }]}>
-            {user?.lastName}
-          </Text>
-        </View>
-
-        <View style={[styles.infoCard, { borderBottomColor: theme.border }]}>
-          <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>
-            Email
-          </Text>
-          <Text style={[styles.infoValue, { color: theme.text }]}>
-            {user?.emailId}
-          </Text>
-        </View>
-
-        <View style={[styles.infoCard, { borderBottomColor: theme.border }]}>
-          <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>
-            Bio
-          </Text>
-          <Text style={[styles.infoValue, { color: theme.text }]}>
-            {user?.bio || "No bio yet"}
-          </Text>
-        </View>
+      {/* Info card */}
+      <View style={[styles.section, { backgroundColor: theme.card }]}>
+        <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>
+          Account Info
+        </Text>
+        <InfoRow iconName="user" label="First Name" value={user?.firstName} />
+        <InfoRow iconName="user" label="Last Name" value={user?.lastName} />
+        <InfoRow iconName="mail" label="Email" value={user?.emailId} />
+        <InfoRow
+          iconName="fileText"
+          label="Bio"
+          value={user?.bio || "No bio yet"}
+        />
       </View>
 
+      {/* Settings */}
       <View
-        style={[
-          styles.infoSection,
-          { backgroundColor: theme.card, marginTop: 16 },
-        ]}
+        style={[styles.section, { backgroundColor: theme.card, marginTop: 12 }]}
       >
+        <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>
+          Preferences
+        </Text>
         <View style={[styles.settingRow, { borderBottomColor: theme.border }]}>
-          <View>
-            <Text style={[styles.settingLabel, { color: theme.text }]}>
-              Dark Mode
-            </Text>
-            <Text
-              style={[styles.settingSubLabel, { color: theme.textSecondary }]}
+          <View style={styles.settingLeft}>
+            <View
+              style={[
+                styles.settingIconWrap,
+                { backgroundColor: isDark ? "#1A2340" : "#FFF8E7" },
+              ]}
             >
-              Switch to {isDark ? "light" : "dark"} theme
-            </Text>
+              <Icon
+                name={isDark ? "moon" : "sun"}
+                size={17}
+                color={isDark ? "#4F80FF" : "#D97706"}
+              />
+            </View>
+            <View>
+              <Text style={[styles.settingLabel, { color: theme.text }]}>
+                {isDark ? "Dark Mode" : "Light Mode"}
+              </Text>
+              <Text
+                style={[styles.settingSubLabel, { color: theme.textSecondary }]}
+              >
+                {isDark ? "Switch to light theme" : "Switch to dark theme"}
+              </Text>
+            </View>
           </View>
           <Switch
             value={isDark}
             onValueChange={toggleTheme}
-            trackColor={{ false: "#ddd", true: "#1A73E8" }}
-            thumbColor={isDark ? "#fff" : "#fff"}
+            trackColor={{ false: theme.border, true: theme.primary }}
+            thumbColor="#fff"
           />
         </View>
       </View>
 
+      {/* App info */}
       <View style={styles.appInfo}>
-        <Text style={styles.appInfoText}>💬 QuickChat</Text>
-        <Text style={[styles.appInfoVersion, { color: theme.textSecondary }]}>
+        <View
+          style={[styles.appLogoMini, { backgroundColor: theme.primaryLight }]}
+        >
+          <Icon name="messageCircle" size={18} color={theme.primary} />
+        </View>
+        <Text style={[styles.appName, { color: theme.primary }]}>
+          QuickChat
+        </Text>
+        <Text style={[styles.appVersion, { color: theme.textSecondary }]}>
           Version 1.0.0
         </Text>
-        <Text style={[styles.appInfoSubtext, { color: theme.textSecondary }]}>
-          Built with React Native + Node.js + Socket.io
+        <Text style={[styles.appStack, { color: theme.textSecondary }]}>
+          React Native · Node.js · Socket.io
         </Text>
       </View>
 
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.logoutText}>Logout</Text>
+      {/* Logout */}
+      <TouchableOpacity
+        style={[styles.logoutButton, { borderColor: theme.danger + "40" }]}
+        onPress={handleLogout}
+        activeOpacity={0.85}
+      >
+        <Icon name="logOut" size={18} color={theme.danger} />
+        <Text style={[styles.logoutText, { color: theme.danger }]}>
+          Sign Out
+        </Text>
       </TouchableOpacity>
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -251,87 +303,91 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     borderBottomWidth: 1,
   },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
-  },
-  editButton: {
-    fontSize: 16,
-    color: "#1A73E8",
-    fontWeight: "bold",
-  },
-  profileSection: {
+  headerTitle: { fontSize: 26, fontWeight: "800", letterSpacing: -0.5 },
+  editBtn: {
+    flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 32,
-    marginBottom: 16,
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
   },
-  avatarContainer: {
-    position: "relative",
-    marginBottom: 8,
+  editBtnText: { fontSize: 14, fontWeight: "700" },
+  heroSection: {
+    alignItems: "center",
+    paddingTop: 32,
+    paddingBottom: 28,
+    marginBottom: 12,
   },
+  avatarContainer: { position: "relative", marginBottom: 8 },
   avatar: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    backgroundColor: "#1A73E8",
+    width: 96,
+    height: 96,
+    borderRadius: 48,
     justifyContent: "center",
     alignItems: "center",
   },
-  avatarImage: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-  },
-  avatarText: {
-    color: "#fff",
-    fontSize: 32,
-    fontWeight: "bold",
-  },
+  avatarImage: { width: 96, height: 96, borderRadius: 48 },
+  avatarText: { color: "#fff", fontSize: 34, fontWeight: "800" },
   avatarOverlay: {
     position: "absolute",
     bottom: 0,
     right: 0,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    backgroundColor: "rgba(0,0,0,0.65)",
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
-    borderColor: "#fff",
   },
-  avatarOverlayText: {
-    fontSize: 14,
-  },
-  tapText: {
-    fontSize: 12,
-    color: "#999",
-    marginBottom: 12,
-  },
-  name: {
-    fontSize: 24,
-    fontWeight: "bold",
+  tapHint: { fontSize: 12, marginBottom: 12, fontWeight: "500" },
+  heroName: {
+    fontSize: 22,
+    fontWeight: "800",
+    letterSpacing: -0.3,
     marginBottom: 4,
   },
-  email: {
-    fontSize: 14,
+  heroEmail: { fontSize: 14, marginBottom: 12 },
+  bioPill: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    maxWidth: "80%",
   },
-  infoSection: {
-    paddingHorizontal: 20,
-  },
-  infoCard: {
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-  },
-  infoLabel: {
-    fontSize: 12,
-    marginBottom: 4,
+  bioText: { fontSize: 13, textAlign: "center", lineHeight: 18 },
+  section: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 4 },
+  sectionTitle: {
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    paddingTop: 16,
+    paddingBottom: 4,
   },
-  infoValue: {
-    fontSize: 16,
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    gap: 14,
   },
+  infoIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  infoContent: { flex: 1 },
+  infoLabel: {
+    fontSize: 11,
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
+    marginBottom: 2,
+    fontWeight: "600",
+  },
+  infoValue: { fontSize: 15, fontWeight: "500" },
   settingRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -339,45 +395,41 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderBottomWidth: 1,
   },
-  settingLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  settingSubLabel: {
-    fontSize: 13,
-  },
-  appInfo: {
+  settingLeft: { flexDirection: "row", alignItems: "center", flex: 1, gap: 14 },
+  settingIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 24,
-    marginBottom: 16,
   },
-  appInfoText: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#1A73E8",
-    marginBottom: 4,
+  settingLabel: { fontSize: 15, fontWeight: "600", marginBottom: 2 },
+  settingSubLabel: { fontSize: 12 },
+  appInfo: { alignItems: "center", paddingVertical: 24, gap: 4 },
+  appLogoMini: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 6,
   },
-  appInfoVersion: {
-    fontSize: 13,
-    marginBottom: 4,
-  },
-  appInfoSubtext: {
-    fontSize: 12,
-  },
+  appName: { fontSize: 15, fontWeight: "800", letterSpacing: 0.2 },
+  appVersion: { fontSize: 12 },
+  appStack: { fontSize: 11 },
   logoutButton: {
-    backgroundColor: "#E74C3C",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
     marginHorizontal: 20,
     marginBottom: 40,
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 16,
-    alignItems: "center",
+    borderWidth: 1.5,
+    backgroundColor: "transparent",
   },
-  logoutText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
+  logoutText: { fontSize: 15, fontWeight: "700" },
 });
 
 export default ProfileScreen;

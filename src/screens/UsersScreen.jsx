@@ -13,12 +13,14 @@ import {
 import { useTheme } from "../context/ThemeContext";
 import { getToken } from "../utils/storage";
 import api from "../utils/api";
+import Icon from "./Icons";
 
 const UsersScreen = ({ navigation }) => {
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
   const { theme } = useTheme();
 
   useEffect(() => {
@@ -56,12 +58,30 @@ const UsersScreen = ({ navigation }) => {
     setFilteredUsers(filtered);
   };
 
+  const getAvatarColor = (name) => {
+    const colors = [
+      "#3B6EF8",
+      "#E24F7A",
+      "#8B5CF6",
+      "#F97316",
+      "#059669",
+      "#D97706",
+    ];
+    if (!name) return colors[0];
+    return colors[name.charCodeAt(0) % colors.length];
+  };
+
   const renderAvatar = (user) => (
     <View style={styles.avatarContainer}>
       {user?.photoUrl && !user.photoUrl.includes("avatar.iran.liara.run") ? (
         <Image source={{ uri: user.photoUrl }} style={styles.avatarImage} />
       ) : (
-        <View style={styles.avatar}>
+        <View
+          style={[
+            styles.avatar,
+            { backgroundColor: getAvatarColor(user?.firstName) },
+          ]}
+        >
           <Text style={styles.avatarText}>
             {user?.firstName?.[0]}
             {user?.lastName?.[0]}
@@ -71,7 +91,8 @@ const UsersScreen = ({ navigation }) => {
       <View
         style={[
           styles.onlineDot,
-          { backgroundColor: user?.isOnline ? "#16A085" : "#ccc" },
+          { backgroundColor: user?.isOnline ? theme.success : theme.border },
+          { borderColor: theme.card },
         ]}
       />
     </View>
@@ -79,7 +100,7 @@ const UsersScreen = ({ navigation }) => {
 
   const renderUser = ({ item }) => (
     <TouchableOpacity
-      style={[styles.userItem, { borderBottomColor: theme.border }]}
+      style={[styles.userItem, { backgroundColor: theme.card }]}
       onPress={() =>
         navigation.navigate("Chat", {
           receiverId: item._id,
@@ -87,31 +108,56 @@ const UsersScreen = ({ navigation }) => {
           receiverPhoto: item.photoUrl,
         })
       }
+      activeOpacity={0.7}
     >
       {renderAvatar(item)}
       <View style={styles.userInfo}>
         <Text style={[styles.userName, { color: theme.text }]}>
           {item.firstName} {item.lastName}
         </Text>
-        <Text style={[styles.userBio, { color: theme.textSecondary }]}>
+        <Text
+          style={[styles.userBio, { color: theme.textSecondary }]}
+          numberOfLines={1}
+        >
           {item.bio || "Hey there! I am using QuickChat"}
         </Text>
       </View>
-      <Text
+      <View
         style={[
-          styles.statusText,
-          { color: item.isOnline ? "#16A085" : theme.textSecondary },
+          styles.statusPill,
+          {
+            backgroundColor: item.isOnline
+              ? theme.success + "18"
+              : theme.surface,
+          },
         ]}
       >
-        {item.isOnline ? "Online" : "Offline"}
-      </Text>
+        <View
+          style={[
+            styles.statusDotSmall,
+            {
+              backgroundColor: item.isOnline
+                ? theme.success
+                : theme.textSecondary,
+            },
+          ]}
+        />
+        <Text
+          style={[
+            styles.statusText,
+            { color: item.isOnline ? theme.success : theme.textSecondary },
+          ]}
+        >
+          {item.isOnline ? "Online" : "Offline"}
+        </Text>
+      </View>
     </TouchableOpacity>
   );
 
   if (loading) {
     return (
       <View style={[styles.centered, { backgroundColor: theme.surface }]}>
-        <ActivityIndicator size="large" color="#1A73E8" />
+        <ActivityIndicator size="large" color={theme.primary} />
       </View>
     );
   }
@@ -124,57 +170,84 @@ const UsersScreen = ({ navigation }) => {
           { backgroundColor: theme.headerBg, borderBottomColor: theme.border },
         ]}
       >
-        <Text style={[styles.headerTitle, { color: theme.text }]}>People</Text>
-        <Text style={[styles.headerSubtitle, { color: theme.textSecondary }]}>
-          {filteredUsers.length} users available
-        </Text>
+        <View>
+          <Text style={[styles.headerTitle, { color: theme.text }]}>
+            People
+          </Text>
+          <Text style={[styles.headerSubtitle, { color: theme.textSecondary }]}>
+            {filteredUsers.length}{" "}
+            {filteredUsers.length === 1 ? "person" : "people"} available
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.headerIconWrap,
+            { backgroundColor: theme.primaryLight },
+          ]}
+        >
+          <Icon name="users" size={20} color={theme.primary} />
+        </View>
       </View>
 
+      {/* Search bar */}
       <View
         style={[
           styles.searchContainer,
           { backgroundColor: theme.headerBg, borderBottomColor: theme.border },
         ]}
       >
-        <TextInput
+        <View
           style={[
-            styles.searchInput,
+            styles.searchWrap,
             {
               backgroundColor: theme.inputBg,
-              borderColor: theme.inputBorder,
-              color: theme.text,
+              borderColor: searchFocused ? theme.primary : theme.inputBorder,
             },
           ]}
-          placeholder="Search by name or bio..."
-          placeholderTextColor={theme.placeholder}
-          value={searchText}
-          onChangeText={handleSearch}
-        />
-        {searchText.length > 0 && (
-          <TouchableOpacity
-            style={styles.clearButton}
-            onPress={() => handleSearch("")}
-          >
-            <Text
-              style={[styles.clearButtonText, { color: theme.textSecondary }]}
+        >
+          <View style={styles.searchIconWrap}>
+            <Icon
+              name="search"
+              size={17}
+              color={searchFocused ? theme.primary : theme.textSecondary}
+            />
+          </View>
+          <TextInput
+            style={[styles.searchInput, { color: theme.text }]}
+            placeholder="Search by name or bio…"
+            placeholderTextColor={theme.placeholder}
+            value={searchText}
+            onChangeText={handleSearch}
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setSearchFocused(false)}
+          />
+          {searchText.length > 0 && (
+            <TouchableOpacity
+              onPress={() => handleSearch("")}
+              style={styles.clearBtn}
             >
-              ✕
-            </Text>
-          </TouchableOpacity>
-        )}
+              <Icon name="x" size={15} color={theme.textSecondary} />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
-      {/* Users list */}
       {filteredUsers.length === 0 ? (
         <View style={styles.centered}>
+          <View
+            style={[
+              styles.emptyIllustration,
+              { backgroundColor: theme.primaryLight },
+            ]}
+          >
+            <Icon name="users" size={40} color={theme.primary} />
+          </View>
           <Text style={[styles.emptyText, { color: theme.text }]}>
-            {searchText
-              ? `No users found for "${searchText}"`
-              : "No users found"}
+            {searchText ? `No results for "${searchText}"` : "No users found"}
           </Text>
           <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
             {searchText
-              ? "Try a different search"
+              ? "Try a different search term"
               : "Be the first to invite friends!"}
           </Text>
         </View>
@@ -185,6 +258,7 @@ const UsersScreen = ({ navigation }) => {
           renderItem={renderUser}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContainer}
+          ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
         />
       )}
     </View>
@@ -192,119 +266,106 @@ const UsersScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   centered: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 24,
   },
   header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 16,
     borderBottomWidth: 1,
   },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    marginTop: 4,
+  headerTitle: { fontSize: 26, fontWeight: "800", letterSpacing: -0.5 },
+  headerSubtitle: { fontSize: 13, fontWeight: "500", marginTop: 2 },
+  headerIconWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    justifyContent: "center",
+    alignItems: "center",
   },
   searchContainer: {
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  searchInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: 24,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    fontSize: 15,
-  },
-  clearButton: {
-    position: "absolute",
-    right: 28,
-    padding: 8,
-  },
-  clearButtonText: {
-    fontSize: 16,
-  },
-  listContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-  },
-  userItem: {
-    flexDirection: "row",
-    alignItems: "center",
     paddingVertical: 12,
     borderBottomWidth: 1,
   },
-  avatarContainer: {
-    position: "relative",
-    marginRight: 14,
+  searchWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1.5,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
   },
+  searchIconWrap: { marginRight: 10 },
+  searchInput: { flex: 1, fontSize: 15 },
+  clearBtn: { padding: 4 },
+  listContainer: { padding: 12, paddingTop: 16 },
+  userItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 14,
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  avatarContainer: { position: "relative", marginRight: 14 },
   avatar: {
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: "#1A73E8",
     justifyContent: "center",
     alignItems: "center",
   },
-  avatarImage: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-  },
-  avatarText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
+  avatarImage: { width: 52, height: 52, borderRadius: 26 },
+  avatarText: { color: "#fff", fontSize: 17, fontWeight: "700" },
   onlineDot: {
     position: "absolute",
-    bottom: 2,
-    right: 2,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    bottom: 1,
+    right: 1,
+    width: 13,
+    height: 13,
+    borderRadius: 7,
     borderWidth: 2,
-    borderColor: "#fff",
   },
-  userInfo: {
-    flex: 1,
+  userInfo: { flex: 1 },
+  userName: { fontSize: 15, fontWeight: "700", marginBottom: 3 },
+  userBio: { fontSize: 13 },
+  statusPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    gap: 5,
   },
-  userName: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  userBio: {
-    fontSize: 13,
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: "600",
+  statusDotSmall: { width: 6, height: 6, borderRadius: 3 },
+  statusText: { fontSize: 11, fontWeight: "600" },
+  emptyIllustration: {
+    width: 88,
+    height: 88,
+    borderRadius: 28,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 20,
   },
   emptyText: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: "800",
     marginBottom: 8,
     textAlign: "center",
   },
-  emptySubtext: {
-    fontSize: 14,
-    textAlign: "center",
-    paddingHorizontal: 40,
-  },
+  emptySubtext: { fontSize: 14, textAlign: "center", paddingHorizontal: 40 },
 });
 
 export default UsersScreen;
